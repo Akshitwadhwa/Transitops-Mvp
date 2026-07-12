@@ -138,3 +138,40 @@ export async function resetDatabaseApi(): Promise<any> {
   }
   return res.json();
 }
+
+export async function updateVehicleApi(id: string, vehicle: Partial<Vehicle>): Promise<Vehicle> {
+  const res = await fetch(`${API_BASE}/vehicles/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(vehicle),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to update vehicle");
+  }
+  return res.json();
+}
+
+export async function updateDriverApi(id: string, driver: Partial<Driver>): Promise<Driver> {
+  const res = await fetch(`${API_BASE}/drivers/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(driver),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to update driver");
+  }
+  return res.json();
+}
+
+export async function deleteExpenseApi(id: string): Promise<any> {
+  const res = await fetch(`${API_BASE}/expenses/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to delete expense");
+  }
+  return res.json();
+}

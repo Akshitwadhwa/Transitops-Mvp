@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Plus, Truck, X } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
 import type { AppData, Vehicle } from "../types";
-
-import { createVehicle } from "../logic/api";
+import { createVehicle, updateVehicleApi } from "../logic/api";
 
 type VehiclesProps = {
   data: AppData;
@@ -31,6 +30,7 @@ export function Vehicles({ data, setData }: VehiclesProps) {
       maxLoadKg: Number(form.get("maxLoadKg")),
       odometerKm: Number(form.get("odometerKm")),
       acquisitionCost: Number(form.get("acquisitionCost")),
+      status: editingVehicle ? (String(form.get("status")) as Vehicle["status"]) : undefined,
     };
     setData((cur) => ({ ...cur, vehicles: [vehicle, ...cur.vehicles] }));
     event.currentTarget.reset();
@@ -64,12 +64,13 @@ export function Vehicles({ data, setData }: VehiclesProps) {
                 <th>Odometer</th>
                 <th>Acq. Cost</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {data.vehicles.length === 0 ? (
                 <tr>
-                  <td className="empty-cell" colSpan={6}>No vehicles registered yet. Add your first vehicle using the form.</td>
+                  <td className="empty-cell" colSpan={7}>No vehicles registered yet. Add your first vehicle using the form.</td>
                 </tr>
               ) : (
                 data.vehicles.map((vehicle) => (
@@ -80,6 +81,17 @@ export function Vehicles({ data, setData }: VehiclesProps) {
                     <td>{vehicle.maxLoadKg} kg</td>
                     <td>{vehicle.region}</td>
                     <td><StatusBadge status={vehicle.status} /></td>
+                    <td>
+                      <button
+                        className="small-button"
+                        onClick={() => setEditingVehicle(vehicle)}
+                        title="Edit vehicle"
+                        type="button"
+                      >
+                        <Edit2 size={14} />
+                        Edit
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}

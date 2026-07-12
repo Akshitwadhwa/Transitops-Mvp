@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Fuel, Plus, X } from "lucide-react";
 import { formatMoney, getVehicleName } from "../logic/rules";
 import type { AppData, Expense } from "../types";
-
-import { createExpense } from "../logic/api";
+import { createExpense, deleteExpenseApi } from "../logic/api";
 
 type ExpensesProps = {
   data: AppData;
@@ -75,12 +74,13 @@ export function Expenses({ data, setData }: ExpensesProps) {
                 <th>Amount</th>
                 <th>Liters</th>
                 <th>Date</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {data.expenses.length === 0 ? (
                 <tr>
-                  <td className="empty-cell" colSpan={5}>No expenses logged yet. Add a fuel, toll, or maintenance expense to get started.</td>
+                  <td className="empty-cell" colSpan={6}>No expenses logged yet. Add a fuel, toll, or maintenance expense to get started.</td>
                 </tr>
               ) : (
                 data.expenses.map((expense) => (
@@ -90,6 +90,16 @@ export function Expenses({ data, setData }: ExpensesProps) {
                     <td>{formatMoney(expense.amount)}</td>
                     <td>{expense.liters ?? "-"}</td>
                     <td>{expense.date}</td>
+                    <td>
+                      <button
+                        className="small-button danger"
+                        onClick={() => handleDelete(expense.id)}
+                        title="Delete expense"
+                        type="button"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}

@@ -469,6 +469,68 @@ app.post("/api/reset", async (req, res) => {
   }
 });
 
+// PUT update vehicle
+app.put("/api/vehicles/:id", async (req, res) => {
+  const { id } = req.params;
+  const { model, type, region, maxLoadKg, odometerKm, acquisitionCost, status } = req.body;
+
+  try {
+    const updated = await prisma.vehicle.update({
+      where: { id },
+      data: {
+        model: model?.trim(),
+        type,
+        region,
+        maxLoadKg: maxLoadKg ? Number(maxLoadKg) : undefined,
+        odometerKm: odometerKm ? Number(odometerKm) : undefined,
+        acquisitionCost: acquisitionCost ? Number(acquisitionCost) : undefined,
+        status,
+      },
+    });
+    res.json(updated);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to update vehicle." });
+  }
+});
+
+// PUT update driver
+app.put("/api/drivers/:id", async (req, res) => {
+  const { id } = req.params;
+  const { name, licenseCategory, licenseExpiryDate, contactNumber, safetyScore, status } = req.body;
+
+  try {
+    const updated = await prisma.driver.update({
+      where: { id },
+      data: {
+        name: name?.trim(),
+        licenseCategory,
+        licenseExpiryDate,
+        contactNumber: contactNumber?.trim(),
+        safetyScore: safetyScore ? Number(safetyScore) : undefined,
+        status,
+      },
+    });
+    res.json(updated);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to update driver." });
+  }
+});
+
+// DELETE expense
+app.delete("/api/expenses/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await prisma.expense.delete({ where: { id } });
+    res.json({ message: "Expense deleted successfully." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to delete expense." });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`TransitOps Backend Server is running on port ${PORT}`);
 });

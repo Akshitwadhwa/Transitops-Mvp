@@ -3,8 +3,7 @@ import { Plus, UserRound, X } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
 import { isLicenseExpired } from "../logic/rules";
 import type { AppData, Driver } from "../types";
-
-import { createDriver } from "../logic/api";
+import { createDriver, updateDriverApi } from "../logic/api";
 
 type DriversProps = {
   data: AppData;
@@ -31,6 +30,7 @@ export function Drivers({ data, setData }: DriversProps) {
       licenseExpiryDate: String(form.get("licenseExpiryDate")),
       contactNumber: String(form.get("contactNumber")).trim(),
       safetyScore: Number(form.get("safetyScore")),
+      status: editingDriver ? (String(form.get("status")) as Driver["status"]) : undefined,
     };
     setData((cur) => ({ ...cur, drivers: [driver, ...cur.drivers] }));
     event.currentTarget.reset();
@@ -65,12 +65,13 @@ export function Drivers({ data, setData }: DriversProps) {
                 <th>Safety</th>
                 <th>Status</th>
                 <th>Compliance</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {data.drivers.length === 0 ? (
                 <tr>
-                  <td className="empty-cell" colSpan={6}>No drivers added yet. Register your first driver using the form.</td>
+                  <td className="empty-cell" colSpan={7}>No drivers added yet. Register your first driver using the form.</td>
                 </tr>
               ) : (
                 data.drivers.map((driver) => (
@@ -81,6 +82,17 @@ export function Drivers({ data, setData }: DriversProps) {
                     <td>{driver.safetyScore}</td>
                     <td><StatusBadge status={driver.status} /></td>
                     <td><StatusBadge status={isLicenseExpired(driver) ? "Expired" : "Valid"} /></td>
+                    <td>
+                      <button
+                        className="small-button"
+                        onClick={() => setEditingDriver(driver)}
+                        title="Edit driver"
+                        type="button"
+                      >
+                        <Edit2 size={14} />
+                        Edit
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
