@@ -9,8 +9,10 @@ type TripsProps = {
 };
 
 export function Trips({ data, setData }: TripsProps) {
-  const availableVehicles = data.vehicles.filter((vehicle) => vehicle.status === "Available");
-  const availableDrivers = data.drivers.filter((driver) => driver.status === "Available");
+  const [showModal, setShowModal] = useState(false);
+
+  const availableVehicles = data.vehicles.filter((v) => v.status === "Available");
+  const availableDrivers  = data.drivers.filter((d)  => d.status === "Available");
 
   function addTrip(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -26,17 +28,15 @@ export function Trips({ data, setData }: TripsProps) {
       revenue: Number(form.get("revenue")),
       status: "Draft",
     };
-
-    setData((current) => ({ ...current, trips: [trip, ...current.trips] }));
+    setData((cur) => ({ ...cur, trips: [trip, ...cur.trips] }));
     event.currentTarget.reset();
+    setShowModal(false);
   }
 
   function handleDispatch(tripId: string) {
-    setData((current) => {
-      const result = dispatchTrip(current, tripId);
-      if (result.errors.length) {
-        window.alert(result.errors.join("\n"));
-      }
+    setData((cur) => {
+      const result = dispatchTrip(cur, tripId);
+      if (result.errors.length) window.alert(result.errors.join("\n"));
       return result.data;
     });
   }
@@ -49,73 +49,32 @@ export function Trips({ data, setData }: TripsProps) {
   }
 
   return (
-    <div className="content-grid form-and-table">
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <h2>Create Trip</h2>
-            <p>Draft trips are validated when dispatch starts.</p>
-          </div>
+    <div className="page-stack">
+      {/* Header */}
+      <div className="page-header">
+        <div className="page-header-left">
+          <h2>Trip Dispatcher</h2>
+          <p>On Complete: odometer → fuel log → expenses → Vehicle &amp; Driver Available</p>
         </div>
-        <form className="form-grid" onSubmit={addTrip}>
-          <label>
-            Source
-            <input name="source" placeholder="Delhi Depot" required />
-          </label>
-          <label>
-            Destination
-            <input name="destination" placeholder="Noida Retail Park" required />
-          </label>
-          <label>
-            Vehicle
-            <select name="vehicleId" required>
-              {availableVehicles.map((vehicle) => (
-                <option key={vehicle.id} value={vehicle.id}>
-                  {vehicle.registrationNumber} - {vehicle.maxLoadKg} kg
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Driver
-            <select name="driverId" required>
-              {availableDrivers.map((driver) => (
-                <option key={driver.id} value={driver.id}>
-                  {driver.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Cargo Weight (kg)
-            <input name="cargoWeightKg" min="1" type="number" required />
-          </label>
-          <label>
-            Planned Distance (km)
-            <input name="plannedDistanceKm" min="1" type="number" required />
-          </label>
-          <label>
-            Revenue
-            <input name="revenue" min="0" type="number" required />
-          </label>
-          <button className="primary-button" disabled={!availableVehicles.length || !availableDrivers.length} type="submit">
-            <Plus size={16} />
-            Add Draft Trip
-          </button>
-        </form>
-      </section>
+        <button
+          className="primary-button"
+          disabled={!canCreate}
+          onClick={() => setShowModal(true)}
+          title={canCreate ? undefined : "No available vehicles or drivers"}
+          type="button"
+        >
+          <Plus size={13} />
+          Create Trip
+        </button>
+      </div>
 
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <h2>Trip Management</h2>
-            <p>Dispatch updates vehicle and driver status automatically.</p>
-          </div>
-        </div>
+      {/* Table */}
+      <div className="panel table-panel">
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
+                <th>Trip</th>
                 <th>Route</th>
                 <th>Vehicle</th>
                 <th>Driver</th>
@@ -162,7 +121,68 @@ export function Trips({ data, setData }: TripsProps) {
             </tbody>
           </table>
         </div>
-      </section>
+      </div>
+
+      {/* Create Trip Modal */}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <h3>Create Trip</h3>
+                <p>Draft trips are validated when dispatch starts.</p>
+              </div>
+              <button className="modal-close" onClick={() => setShowModal(false)} type="button">
+                <X size={14} />
+              </button>
+            </div>
+            <form className="form-grid" onSubmit={addTrip}>
+              <label>
+                Source
+                <input name="source" placeholder="Gandhinagar Depot" required />
+              </label>
+              <label>
+                Destination
+                <input name="destination" placeholder="Ahmedabad Hub" required />
+              </label>
+              <label>
+                Vehicle (Available only)
+                <select name="vehicleId" required>
+                  {availableVehicles.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.registrationNumber} — {v.maxLoadKg} kg capacity
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Driver (Available only)
+                <select name="driverId" required>
+                  {availableDrivers.map((d) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Cargo Weight (kg)
+                <input name="cargoWeightKg" min="1" placeholder="700" type="number" required />
+              </label>
+              <label>
+                Planned Distance (km)
+                <input name="plannedDistanceKm" min="1" placeholder="38" type="number" required />
+              </label>
+              <label>
+                Revenue
+                <input name="revenue" min="0" placeholder="5000" type="number" required />
+              </label>
+              <button className="primary-button" type="submit" style={{ marginTop: "4px" }}>
+                <Plus size={13} />
+                Add Draft Trip
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
