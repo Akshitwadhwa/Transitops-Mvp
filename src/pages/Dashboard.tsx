@@ -11,7 +11,6 @@ import {
   Clock3,
   Gauge,
   Route,
-  Search,
   ShieldAlert,
   Truck,
   UserCheck,
@@ -157,17 +156,13 @@ export function Dashboard({ currentUser, data, onPageChange }: DashboardProps) {
     <div className="dashboard-shell">
       <main className="dashboard-main">
         <header className="dashboard-hero">
-          <div>
+          <div className="dashboard-identity">
             <span className="hero-kicker">Hello</span>
             <h1>{currentUser.name}</h1>
             <span className="role-pill">{currentUser.role}</span>
           </div>
 
-          <div className="dashboard-utility" aria-label="Dashboard utilities">
-            <label className="utility-search">
-              <Search size={17} strokeWidth={2} />
-              <input aria-label="Search dashboard" placeholder="Search" readOnly type="text" />
-            </label>
+          {/* <div className="dashboard-utility" aria-label="Dashboard utilities">
             <button
               className="utility-icon"
               aria-label="Open risk alerts"
@@ -183,7 +178,7 @@ export function Dashboard({ currentUser, data, onPageChange }: DashboardProps) {
             <button className="utility-chevron" aria-label="Open profile menu" type="button">
               <ChevronDown size={18} />
             </button>
-          </div>
+          </div> */}
         </header>
 
         <section className="dashboard-section" aria-labelledby="fleet-status-title">

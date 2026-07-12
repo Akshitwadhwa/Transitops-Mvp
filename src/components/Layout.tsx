@@ -77,8 +77,12 @@ export function Layout({ activePage, currentUser, onPageChange, onLogout, onRese
       {/* Sidebar */}
       <aside className={sidebarOpen ? "sidebar sidebar--open" : "sidebar"}>
         <div className="sidebar-brand">
-          <div className="brand-shell-mark" aria-label="TransitOps">
-            <Truck size={28} strokeWidth={1.5} />
+          <div className="role-card">
+            <div className="role-avatar">{getInitials(currentUser.name)}</div>
+            <div className="role-card-info">
+              <strong>{currentUser.name}</strong>
+              <span>{currentUser.role}</span>
+            </div>
           </div>
         </div>
 
@@ -100,13 +104,6 @@ export function Layout({ activePage, currentUser, onPageChange, onLogout, onRese
         </nav>
 
         <div className="sidebar-footer">
-          <div className="role-card">
-            <div className="role-avatar">{getInitials(currentUser.name)}</div>
-            <div className="role-card-info">
-              <strong>{currentUser.name}</strong>
-              <span>{currentUser.role}</span>
-            </div>
-          </div>
           <div className="sidebar-footer-actions">
             <button
               aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
