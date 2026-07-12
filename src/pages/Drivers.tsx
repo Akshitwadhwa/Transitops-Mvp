@@ -3,22 +3,25 @@ import { StatusBadge } from "../components/StatusBadge";
 import { isLicenseExpired } from "../logic/rules";
 import type { AppData, Driver } from "../types";
 
+import { createDriver } from "../logic/api";
+
 type DriversProps = {
   data: AppData;
   setData: React.Dispatch<React.SetStateAction<AppData>>;
 };
 
 export function Drivers({ data, setData }: DriversProps) {
-  function addDriver(event: React.FormEvent<HTMLFormElement>) {
+  async function addDriver(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const licenseNumber = String(form.get("licenseNumber")).trim().toUpperCase();
     if (data.drivers.some((driver) => driver.licenseNumber === licenseNumber)) {
       window.alert("License number must be unique.");
       return;
     }
 
-    const driver: Driver = {
+    const driverInput = {
       id: crypto.randomUUID(),
       name: String(form.get("name")).trim(),
       licenseNumber,
@@ -26,11 +29,15 @@ export function Drivers({ data, setData }: DriversProps) {
       licenseExpiryDate: String(form.get("licenseExpiryDate")),
       contactNumber: String(form.get("contactNumber")).trim(),
       safetyScore: Number(form.get("safetyScore")),
-      status: "Available",
     };
 
-    setData((current) => ({ ...current, drivers: [driver, ...current.drivers] }));
-    event.currentTarget.reset();
+    try {
+      const savedDriver = await createDriver(driverInput);
+      setData((current) => ({ ...current, drivers: [savedDriver, ...current.drivers] }));
+      formElement.reset();
+    } catch (error: any) {
+      window.alert(error.message || "Failed to create driver.");
+    }
   }
 
   return (

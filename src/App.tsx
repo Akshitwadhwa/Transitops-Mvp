@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { RotateCcw, ShieldCheck, Truck } from "lucide-react";
 import { Layout } from "./components/Layout";
 import { users } from "./data/seed";
-import { loadData, resetData, saveData } from "./logic/storage";
+import { loadData } from "./logic/storage";
+import { fetchAppData, resetDatabaseApi } from "./logic/api";
 import { Dashboard } from "./pages/Dashboard";
 import { Drivers } from "./pages/Drivers";
 import { Expenses } from "./pages/Expenses";
@@ -15,11 +16,37 @@ import type { AppData, Page, User } from "./types";
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(users[0]);
   const [activePage, setActivePage] = useState<Page>("dashboard");
-  const [data, setData] = useState<AppData>(() => loadData());
+  const [data, setData] = useState<AppData>({
+    vehicles: [],
+    drivers: [],
+    trips: [],
+    maintenanceLogs: [],
+    expenses: [],
+  });
+
+  const loadBackendData = async () => {
+    try {
+      const backendData = await fetchAppData();
+      setData(backendData);
+    } catch (err) {
+      console.warn("Could not reach backend, falling back to localStorage", err);
+      setData(loadData());
+    }
+  };
 
   useEffect(() => {
-    saveData(data);
-  }, [data]);
+    loadBackendData();
+  }, []);
+
+  const handleResetData = async () => {
+    try {
+      await resetDatabaseApi();
+      await loadBackendData();
+    } catch (err) {
+      alert("Failed to reset backend database. Resetting local storage instead.");
+      setData(loadData());
+    }
+  };
 
   const page = useMemo(() => {
     switch (activePage) {
@@ -85,7 +112,7 @@ export default function App() {
       onPageChange={setActivePage}
     >
       <div className="workspace-actions">
-        <button className="ghost-button" onClick={() => setData(resetData())} type="button">
+        <button className="ghost-button" onClick={handleResetData} type="button">
           <RotateCcw size={16} />
           Reset Demo Data
         </button>

@@ -1,0 +1,76 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id    String @id @default(uuid())
+  name  String
+  email String @unique
+  role  String // Fleet Manager, Driver, Safety Officer, Financial Analyst
+}
+
+model Vehicle {
+  id                 String           @id @default(uuid())
+  registrationNumber String           @unique
+  model              String
+  type               String           // Mini Truck, Van, Truck, Reefer
+  region             String           // North, South, East, West
+  maxLoadKg          Int
+  odometerKm         Int
+  acquisitionCost    Int
+  status             String           // Available, On Trip, In Shop, Retired
+  trips              Trip[]
+  maintenanceLogs    MaintenanceLog[]
+  expenses           Expense[]
+}
+
+model Driver {
+  id                String   @id @default(uuid())
+  name              String
+  licenseNumber     String   @unique
+  licenseCategory   String   // LMV, HMV, Transport
+  licenseExpiryDate String   // ISO String Date YYYY-MM-DD
+  contactNumber     String
+  safetyScore       Int
+  status            String   // Available, On Trip, Off Duty, Suspended
+  trips             Trip[]
+}
+
+model Trip {
+  id                String   @id @default(uuid())
+  source            String
+  destination       String
+  vehicleId         String
+  vehicle           Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driverId          String
+  driver            Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  cargoWeightKg     Int
+  plannedDistanceKm Int
+  revenue           Int
+  status            String   // Draft, Dispatched, Completed, Cancelled
+}
+
+model MaintenanceLog {
+  id        String   @id @default(uuid())
+  vehicleId String
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  title     String
+  cost      Int
+  openedAt  String   // ISO String Date YYYY-MM-DD
+  status    String   // Active, Closed
+}
+
+model Expense {
+  id        String   @id @default(uuid())
+  vehicleId String
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  type      String   // Fuel, Maintenance, Toll, Other
+  amount    Int
+  liters    Float?
+  date      String   // ISO String Date YYYY-MM-DD
+}

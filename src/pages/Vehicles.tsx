@@ -2,22 +2,25 @@ import { Plus } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
 import type { AppData, Vehicle } from "../types";
 
+import { createVehicle } from "../logic/api";
+
 type VehiclesProps = {
   data: AppData;
   setData: React.Dispatch<React.SetStateAction<AppData>>;
 };
 
 export function Vehicles({ data, setData }: VehiclesProps) {
-  function addVehicle(event: React.FormEvent<HTMLFormElement>) {
+  async function addVehicle(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const registrationNumber = String(form.get("registrationNumber")).trim().toUpperCase();
     if (data.vehicles.some((vehicle) => vehicle.registrationNumber === registrationNumber)) {
       window.alert("Registration number must be unique.");
       return;
     }
 
-    const vehicle: Vehicle = {
+    const vehicleInput = {
       id: crypto.randomUUID(),
       registrationNumber,
       model: String(form.get("model")).trim(),
@@ -26,11 +29,15 @@ export function Vehicles({ data, setData }: VehiclesProps) {
       maxLoadKg: Number(form.get("maxLoadKg")),
       odometerKm: Number(form.get("odometerKm")),
       acquisitionCost: Number(form.get("acquisitionCost")),
-      status: "Available",
     };
 
-    setData((current) => ({ ...current, vehicles: [vehicle, ...current.vehicles] }));
-    event.currentTarget.reset();
+    try {
+      const savedVehicle = await createVehicle(vehicleInput);
+      setData((current) => ({ ...current, vehicles: [savedVehicle, ...current.vehicles] }));
+      formElement.reset();
+    } catch (error: any) {
+      window.alert(error.message || "Failed to create vehicle.");
+    }
   }
 
   return (

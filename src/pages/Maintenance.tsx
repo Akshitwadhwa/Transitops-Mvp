@@ -2,6 +2,7 @@ import { Check, Plus } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
 import { formatMoney, getVehicleName } from "../logic/rules";
 import type { AppData, MaintenanceLog } from "../types";
+import { openMaintenanceApi, closeMaintenanceApi, fetchAppData } from "../logic/api";
 
 type MaintenanceProps = {
   data: AppData;
@@ -11,55 +12,39 @@ type MaintenanceProps = {
 export function Maintenance({ data, setData }: MaintenanceProps) {
   const eligibleVehicles = data.vehicles.filter((vehicle) => vehicle.status === "Available");
 
-  function createMaintenance(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const vehicleId = String(form.get("vehicleId"));
-    const log: MaintenanceLog = {
-      id: crypto.randomUUID(),
-      vehicleId,
-      title: String(form.get("title")).trim(),
-      cost: Number(form.get("cost")),
-      openedAt: new Date().toISOString().slice(0, 10),
-      status: "Active",
-    };
-
-    setData((current) => ({
-      ...current,
-      maintenanceLogs: [log, ...current.maintenanceLogs],
-      expenses: [
-        {
-          id: crypto.randomUUID(),
-          vehicleId,
-          type: "Maintenance",
-          amount: log.cost,
-          date: log.openedAt,
-        },
-        ...current.expenses,
-      ],
-      vehicles: current.vehicles.map((vehicle) =>
-        vehicle.id === vehicleId ? { ...vehicle, status: "In Shop" as const } : vehicle,
-      ),
-    }));
-    event.currentTarget.reset();
+  async function reloadData() {
+    try {
+      const freshData = await fetchAppData();
+      setData(freshData);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
-  function closeMaintenance(logId: string) {
-    setData((current) => {
-      const log = current.maintenanceLogs.find((item) => item.id === logId);
-      if (!log) return current;
-      return {
-        ...current,
-        maintenanceLogs: current.maintenanceLogs.map((item) =>
-          item.id === logId ? { ...item, status: "Closed" as const } : item,
-        ),
-        vehicles: current.vehicles.map((vehicle) =>
-          vehicle.id === log.vehicleId && vehicle.status !== "Retired"
-            ? { ...vehicle, status: "Available" as const }
-            : vehicle,
-        ),
-      };
-    });
+  async function createMaintenance(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const vehicleId = String(form.get("vehicleId"));
+    const title = String(form.get("title")).trim();
+    const cost = Number(form.get("cost"));
+
+    try {
+      await openMaintenanceApi(vehicleId, title, cost);
+      await reloadData();
+      formElement.reset();
+    } catch (error: any) {
+      window.alert(error.message || "Failed to create log.");
+    }
+  }
+
+  async function closeMaintenance(logId: string) {
+    try {
+      await closeMaintenanceApi(logId);
+      await reloadData();
+    } catch (error: any) {
+      window.alert(error.message || "Failed to close log.");
+    }
   }
 
   return (

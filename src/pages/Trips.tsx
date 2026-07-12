@@ -1,6 +1,7 @@
 import { Check, Play, Plus, Trash2, X } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
-import { cancelTrip, completeTrip, dispatchTrip, getDriverName, getVehicleName } from "../logic/rules";
+import { createTrip, dispatchTripApi, completeTripApi, cancelTripApi, deleteTripApi, fetchAppData } from "../logic/api";
+import { getDriverName, getVehicleName } from "../logic/rules";
 import type { AppData, Trip } from "../types";
 
 type TripsProps = {
@@ -12,10 +13,20 @@ export function Trips({ data, setData }: TripsProps) {
   const availableVehicles = data.vehicles.filter((vehicle) => vehicle.status === "Available");
   const availableDrivers = data.drivers.filter((driver) => driver.status === "Available");
 
-  function addTrip(event: React.FormEvent<HTMLFormElement>) {
+  async function reloadData() {
+    try {
+      const freshData = await fetchAppData();
+      setData(freshData);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function addTrip(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const trip: Trip = {
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const tripInput = {
       id: crypto.randomUUID(),
       source: String(form.get("source")).trim(),
       destination: String(form.get("destination")).trim(),
@@ -24,28 +35,51 @@ export function Trips({ data, setData }: TripsProps) {
       cargoWeightKg: Number(form.get("cargoWeightKg")),
       plannedDistanceKm: Number(form.get("plannedDistanceKm")),
       revenue: Number(form.get("revenue")),
-      status: "Draft",
     };
 
-    setData((current) => ({ ...current, trips: [trip, ...current.trips] }));
-    event.currentTarget.reset();
+    try {
+      await createTrip(tripInput);
+      await reloadData();
+      formElement.reset();
+    } catch (error: any) {
+      window.alert(error.message || "Failed to create trip.");
+    }
   }
 
-  function handleDispatch(tripId: string) {
-    setData((current) => {
-      const result = dispatchTrip(current, tripId);
-      if (result.errors.length) {
-        window.alert(result.errors.join("\n"));
-      }
-      return result.data;
-    });
+  async function handleDispatch(tripId: string) {
+    try {
+      await dispatchTripApi(tripId);
+      await reloadData();
+    } catch (error: any) {
+      window.alert(error.message || "Failed to dispatch trip.");
+    }
   }
 
-  function deleteTrip(tripId: string) {
-    setData((current) => ({
-      ...current,
-      trips: current.trips.filter((item) => item.id !== tripId),
-    }));
+  async function handleComplete(tripId: string) {
+    try {
+      await completeTripApi(tripId);
+      await reloadData();
+    } catch (error: any) {
+      window.alert(error.message || "Failed to complete trip.");
+    }
+  }
+
+  async function handleCancel(tripId: string) {
+    try {
+      await cancelTripApi(tripId);
+      await reloadData();
+    } catch (error: any) {
+      window.alert(error.message || "Failed to cancel trip.");
+    }
+  }
+
+  async function deleteTrip(tripId: string) {
+    try {
+      await deleteTripApi(tripId);
+      await reloadData();
+    } catch (error: any) {
+      window.alert(error.message || "Failed to delete trip.");
+    }
   }
 
   return (
@@ -143,11 +177,11 @@ export function Trips({ data, setData }: TripsProps) {
                           <Play size={14} />
                           Dispatch
                         </button>
-                        <button className="small-button" disabled={trip.status !== "Dispatched"} onClick={() => setData((current) => completeTrip(current, trip.id))} type="button">
+                        <button className="small-button" disabled={trip.status !== "Dispatched"} onClick={() => handleComplete(trip.id)} type="button">
                           <Check size={14} />
                           Complete
                         </button>
-                        <button className="small-button danger" disabled={trip.status === "Completed" || trip.status === "Cancelled"} onClick={() => setData((current) => cancelTrip(current, trip.id))} type="button">
+                        <button className="small-button danger" disabled={trip.status === "Completed" || trip.status === "Cancelled"} onClick={() => handleCancel(trip.id)} type="button">
                           <X size={14} />
                           Cancel
                         </button>

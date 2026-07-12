@@ -2,17 +2,19 @@ import { Plus } from "lucide-react";
 import { formatMoney, getVehicleName } from "../logic/rules";
 import type { AppData, Expense } from "../types";
 
+import { createExpense } from "../logic/api";
+
 type ExpensesProps = {
   data: AppData;
   setData: React.Dispatch<React.SetStateAction<AppData>>;
 };
 
 export function Expenses({ data, setData }: ExpensesProps) {
-  function addExpense(event: React.FormEvent<HTMLFormElement>) {
+  async function addExpense(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const expense: Expense = {
-      id: crypto.randomUUID(),
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const expenseInput = {
       vehicleId: String(form.get("vehicleId")),
       type: String(form.get("type")) as Expense["type"],
       amount: Number(form.get("amount")),
@@ -20,8 +22,13 @@ export function Expenses({ data, setData }: ExpensesProps) {
       date: String(form.get("date")),
     };
 
-    setData((current) => ({ ...current, expenses: [expense, ...current.expenses] }));
-    event.currentTarget.reset();
+    try {
+      const savedExpense = await createExpense(expenseInput);
+      setData((current) => ({ ...current, expenses: [savedExpense, ...current.expenses] }));
+      formElement.reset();
+    } catch (error: any) {
+      window.alert(error.message || "Failed to log expense.");
+    }
   }
 
   return (
