@@ -3,6 +3,7 @@ import { useState } from "react";
 import { StatusBadge } from "../components/StatusBadge";
 import type { AppData, Vehicle } from "../types";
 
+
 type VehiclesProps = {
   data: AppData;
   setData: React.Dispatch<React.SetStateAction<AppData>>;

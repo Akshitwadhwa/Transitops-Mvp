@@ -4,6 +4,7 @@ import { StatusBadge } from "../components/StatusBadge";
 import { isLicenseExpired } from "../logic/rules";
 import type { AppData, Driver } from "../types";
 
+
 type DriversProps = {
   data: AppData;
   setData: React.Dispatch<React.SetStateAction<AppData>>;

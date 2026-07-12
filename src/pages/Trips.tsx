@@ -3,6 +3,7 @@ import { StatusBadge } from "../components/StatusBadge";
 import { cancelTrip, completeTrip, dispatchTrip, getDriverName, getVehicleName } from "../logic/rules";
 import type { AppData, Trip } from "../types";
 
+
 type TripsProps = {
   data: AppData;
   setData: React.Dispatch<React.SetStateAction<AppData>>;

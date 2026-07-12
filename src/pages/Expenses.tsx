@@ -2,6 +2,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { formatMoney, getVehicleName } from "../logic/rules";
 import type { AppData, Expense } from "../types";
 
+
 type ExpensesProps = {
   data: AppData;
   setData: React.Dispatch<React.SetStateAction<AppData>>;
