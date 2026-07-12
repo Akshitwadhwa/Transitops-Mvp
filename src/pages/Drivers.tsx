@@ -1,4 +1,5 @@
-import { Plus, UserRound } from "lucide-react";
+import { useState } from "react";
+import { Plus, UserRound, X } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
 import { isLicenseExpired } from "../logic/rules";
 import type { AppData, Driver } from "../types";
@@ -9,15 +10,16 @@ type DriversProps = {
 };
 
 export function Drivers({ data, setData }: DriversProps) {
+  const [showModal, setShowModal] = useState(false);
+
   function addDriver(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const licenseNumber = String(form.get("licenseNumber")).trim().toUpperCase();
-    if (data.drivers.some((driver) => driver.licenseNumber === licenseNumber)) {
+    if (data.drivers.some((d) => d.licenseNumber === licenseNumber)) {
       window.alert("License number must be unique.");
       return;
     }
-
     const driver: Driver = {
       id: crypto.randomUUID(),
       name: String(form.get("name")).trim(),
@@ -28,70 +30,36 @@ export function Drivers({ data, setData }: DriversProps) {
       safetyScore: Number(form.get("safetyScore")),
       status: "Available",
     };
-
-    setData((current) => ({ ...current, drivers: [driver, ...current.drivers] }));
+    setData((cur) => ({ ...cur, drivers: [driver, ...cur.drivers] }));
     event.currentTarget.reset();
+    setShowModal(false);
   }
 
   return (
-    <div className="content-grid form-and-table">
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <h2>Add Driver</h2>
-            <p>Expired licenses and suspended drivers are blocked at dispatch.</p>
-          </div>
+    <div className="page-stack">
+      {/* Header */}
+      <div className="page-header">
+        <div className="page-header-left">
+          <h2>Drivers &amp; Safety Profiles</h2>
+          <p>Rule: Expired license or Suspended status → blocked from trip assignment</p>
         </div>
-        <form className="form-grid" onSubmit={addDriver}>
-          <label>
-            Name
-            <input name="name" placeholder="Aman Verma" required />
-          </label>
-          <label>
-            License Number
-            <input name="licenseNumber" placeholder="DL0420261122" required />
-          </label>
-          <label>
-            Category
-            <select name="licenseCategory">
-              <option>LMV</option>
-              <option>HMV</option>
-              <option>Transport</option>
-            </select>
-          </label>
-          <label>
-            License Expiry
-            <input name="licenseExpiryDate" type="date" required />
-          </label>
-          <label>
-            Contact
-            <input name="contactNumber" placeholder="+91 98765 43012" required />
-          </label>
-          <label>
-            Safety Score
-            <input name="safetyScore" max="100" min="0" type="number" required />
-          </label>
-          <button className="primary-button" type="submit">
-            <Plus size={16} />
-            Add Driver
-          </button>
-        </form>
-      </section>
+        <button className="primary-button" onClick={() => setShowModal(true)} type="button">
+          <Plus size={13} />
+          Add Driver
+        </button>
+      </div>
 
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <h2>Driver Management</h2>
-            <p>Compliance status is evaluated before trip dispatch.</p>
-          </div>
-        </div>
+      {/* Table */}
+      <div className="panel table-panel">
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Name</th>
-                <th>License</th>
+                <th>Driver</th>
+                <th>License No.</th>
+                <th>Category</th>
                 <th>Expiry</th>
+                <th>Contact</th>
                 <th>Safety</th>
                 <th>Status</th>
                 <th>Compliance</th>
@@ -100,30 +68,93 @@ export function Drivers({ data, setData }: DriversProps) {
             <tbody>
               {data.drivers.length === 0 ? (
                 <tr className="empty-state-row">
-                  <td colSpan={6}>
+                  <td colSpan={8}>
                     <div className="empty-state">
-                      <UserRound size={26} className="empty-state-icon" />
+                      <UserRound size={24} className="empty-state-icon" />
                       <p>No drivers on record</p>
-                      <small>Add drivers using the form to build your dispatch pool.</small>
+                      <small>Use Add Driver to build your dispatch pool.</small>
                     </div>
                   </td>
                 </tr>
               ) : (
-                data.drivers.map((driver) => (
-                  <tr key={driver.id}>
-                    <td>{driver.name}</td>
-                    <td>{driver.licenseNumber}</td>
-                    <td>{driver.licenseExpiryDate}</td>
-                    <td>{driver.safetyScore}</td>
-                    <td><StatusBadge status={driver.status} /></td>
-                    <td><StatusBadge status={isLicenseExpired(driver) ? "Expired" : "Valid"} /></td>
-                  </tr>
-                ))
+                data.drivers.map((d) => {
+                  const expired = isLicenseExpired(d);
+                  return (
+                    <tr key={d.id}>
+                      <td style={{ fontWeight: 600, color: "var(--text-1)" }}>{d.name}</td>
+                      <td>{d.licenseNumber}</td>
+                      <td>{d.licenseCategory}</td>
+                      <td style={{ color: expired ? "var(--s-red)" : "var(--text-2)" }}>
+                        {d.licenseExpiryDate}
+                        {expired && <span style={{ marginLeft: 4, fontSize: "0.65rem", fontWeight: 700 }}>EXPIRED</span>}
+                      </td>
+                      <td>{d.contactNumber}</td>
+                      <td>
+                        <span style={{ color: d.safetyScore < 70 ? "var(--s-orange)" : "var(--text-2)", fontWeight: 600 }}>
+                          {d.safetyScore}%
+                        </span>
+                      </td>
+                      <td><StatusBadge status={d.status} /></td>
+                      <td><StatusBadge status={expired ? "Expired" : "Valid"} /></td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
-      </section>
+      </div>
+
+      {/* Add Driver Modal */}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <h3>Add Driver</h3>
+                <p>Expired licenses and suspended drivers are blocked at dispatch.</p>
+              </div>
+              <button className="modal-close" onClick={() => setShowModal(false)} type="button">
+                <X size={14} />
+              </button>
+            </div>
+            <form className="form-grid" onSubmit={addDriver}>
+              <label>
+                Name
+                <input name="name" placeholder="Aman Verma" required />
+              </label>
+              <label>
+                License Number
+                <input name="licenseNumber" placeholder="DL0420261122" required />
+              </label>
+              <label>
+                Category
+                <select name="licenseCategory">
+                  <option>LMV</option>
+                  <option>HMV</option>
+                  <option>Transport</option>
+                </select>
+              </label>
+              <label>
+                License Expiry
+                <input name="licenseExpiryDate" type="date" required />
+              </label>
+              <label>
+                Contact
+                <input name="contactNumber" placeholder="+91 98765 43012" required />
+              </label>
+              <label>
+                Safety Score (0–100)
+                <input name="safetyScore" max="100" min="0" placeholder="85" type="number" required />
+              </label>
+              <button className="primary-button" type="submit" style={{ marginTop: "4px" }}>
+                <Plus size={13} />
+                Add Driver
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,41 +1,29 @@
 import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 
-export type KpiAccent = "positive" | "warning" | "critical" | "info" | "neutral";
-
 export type KpiCardProps = {
   label: string;
   value: string | number;
-  detail: string;
-  icon: LucideIcon;
-  /** Semantic color for the top bar + icon container. Defaults to "neutral". */
-  accent?: KpiAccent;
+  detail?: string;
+  icon?: LucideIcon;
+  /** CSS color value for the left border, e.g. "var(--kpi-cyan)" */
+  color?: string;
 };
 
-/**
- * Animates a number from 0 → target using easeOutQuart over `duration` ms.
- * Pass null to skip animation (for string values).
- */
-function useCountUp(target: number | null, duration = 900): number | null {
+function useCountUp(target: number | null, duration = 800): number | null {
   const [count, setCount] = useState<number | null>(target === null ? null : 0);
   const rafRef = useRef<number>(0);
 
   useEffect(() => {
     if (target === null) return;
     setCount(0);
-    const startTime = performance.now();
-
+    const start = performance.now();
     const tick = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      // easeOutQuart: fast start, smooth landing
-      const eased = 1 - Math.pow(1 - progress, 4);
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 4); // easeOutQuart
       setCount(Math.round(eased * target));
-      if (progress < 1) {
-        rafRef.current = requestAnimationFrame(tick);
-      }
+      if (progress < 1) rafRef.current = requestAnimationFrame(tick);
     };
-
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
   }, [target, duration]);
@@ -43,21 +31,20 @@ function useCountUp(target: number | null, duration = 900): number | null {
   return count;
 }
 
-export function KpiCard({ label, value, detail, icon: Icon, accent = "neutral" }: KpiCardProps) {
+export function KpiCard({ label, value, detail, color }: KpiCardProps) {
   const numericTarget = typeof value === "number" ? value : null;
-  const animatedValue = useCountUp(numericTarget);
-  const displayValue = numericTarget !== null ? animatedValue : value;
+  const animatedCount = useCountUp(numericTarget);
+  const displayValue  = numericTarget !== null ? animatedCount : value;
 
   return (
-    <section className={`kpi-card kpi-card--${accent}`} aria-label={label}>
-      <div className="kpi-card__header">
-        <span className="kpi-label">{label}</span>
-        <div className="kpi-icon">
-          <Icon size={15} strokeWidth={2} />
-        </div>
-      </div>
+    <section
+      className="kpi-card"
+      style={{ "--kpi-color": color } as React.CSSProperties}
+      aria-label={label}
+    >
+      <span className="kpi-label">{label}</span>
       <strong className="kpi-value">{displayValue}</strong>
-      <span className="kpi-detail">{detail}</span>
+      {detail && <span className="kpi-detail">{detail}</span>}
     </section>
   );
 }

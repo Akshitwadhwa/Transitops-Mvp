@@ -45,10 +45,9 @@ export function Reports({ data }: ReportsProps) {
           <span className="metric-panel-label">Revenue Tracked</span>
           <strong className="metric-panel-value">{formatMoney(completedRevenue)}</strong>
           <span className="metric-panel-context">Completed &amp; active trips</span>
-          {/* Chart drop-zone — replace with <AreaChart> from Recharts */}
           <div className="chart-placeholder" data-chart="revenue-trend">
             <TrendingUp size={13} />
-            Chart area — Recharts ready
+            Revenue trend preview
           </div>
         </div>
 
@@ -58,7 +57,7 @@ export function Reports({ data }: ReportsProps) {
           <span className="metric-panel-context">Fuel, toll &amp; maintenance</span>
           <div className="chart-placeholder" data-chart="cost-trend">
             <TrendingUp size={13} />
-            Chart area — Recharts ready
+            Cost trend preview
           </div>
         </div>
 
@@ -73,7 +72,7 @@ export function Reports({ data }: ReportsProps) {
           <span className="metric-panel-context">(Revenue − Cost) ÷ Cost</span>
           <div className="chart-placeholder" data-chart="roi-trend">
             <TrendingUp size={13} />
-            Chart area — Recharts ready
+            ROI trend preview
           </div>
         </div>
       </div>

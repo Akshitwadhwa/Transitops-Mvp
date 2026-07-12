@@ -1,4 +1,5 @@
-import { Check, ClipboardList, Plus } from "lucide-react";
+import { useState } from "react";
+import { Check, ClipboardList, Plus, X } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
 import { formatMoney, getVehicleName } from "../logic/rules";
 import type { AppData, MaintenanceLog } from "../types";
@@ -9,7 +10,9 @@ type MaintenanceProps = {
 };
 
 export function Maintenance({ data, setData }: MaintenanceProps) {
-  const eligibleVehicles = data.vehicles.filter((vehicle) => vehicle.status === "Available");
+  const [showModal, setShowModal] = useState(false);
+
+  const eligibleVehicles = data.vehicles.filter((v) => v.status === "Available");
 
   function createMaintenance(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -23,93 +26,65 @@ export function Maintenance({ data, setData }: MaintenanceProps) {
       openedAt: new Date().toISOString().slice(0, 10),
       status: "Active",
     };
-
-    setData((current) => ({
-      ...current,
-      maintenanceLogs: [log, ...current.maintenanceLogs],
+    setData((cur) => ({
+      ...cur,
+      maintenanceLogs: [log, ...cur.maintenanceLogs],
       expenses: [
-        {
-          id: crypto.randomUUID(),
-          vehicleId,
-          type: "Maintenance",
-          amount: log.cost,
-          date: log.openedAt,
-        },
-        ...current.expenses,
+        { id: crypto.randomUUID(), vehicleId, type: "Maintenance", amount: log.cost, date: log.openedAt },
+        ...cur.expenses,
       ],
-      vehicles: current.vehicles.map((vehicle) =>
-        vehicle.id === vehicleId ? { ...vehicle, status: "In Shop" as const } : vehicle,
+      vehicles: cur.vehicles.map((v) =>
+        v.id === vehicleId ? { ...v, status: "In Shop" as const } : v
       ),
     }));
     event.currentTarget.reset();
+    setShowModal(false);
   }
 
   function closeMaintenance(logId: string) {
-    setData((current) => {
-      const log = current.maintenanceLogs.find((item) => item.id === logId);
-      if (!log) return current;
+    setData((cur) => {
+      const log = cur.maintenanceLogs.find((l) => l.id === logId);
+      if (!log) return cur;
       return {
-        ...current,
-        maintenanceLogs: current.maintenanceLogs.map((item) =>
-          item.id === logId ? { ...item, status: "Closed" as const } : item,
+        ...cur,
+        maintenanceLogs: cur.maintenanceLogs.map((l) =>
+          l.id === logId ? { ...l, status: "Closed" as const } : l
         ),
-        vehicles: current.vehicles.map((vehicle) =>
-          vehicle.id === log.vehicleId && vehicle.status !== "Retired"
-            ? { ...vehicle, status: "Available" as const }
-            : vehicle,
+        vehicles: cur.vehicles.map((v) =>
+          v.id === log.vehicleId && v.status !== "Retired"
+            ? { ...v, status: "Available" as const }
+            : v
         ),
       };
     });
   }
 
   return (
-    <div className="content-grid form-and-table">
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <h2>Open Maintenance</h2>
-            <p>Opening a log moves the vehicle to In Shop immediately.</p>
-          </div>
+    <div className="page-stack">
+      <div className="page-header">
+        <div className="page-header-left">
+          <h2>Maintenance Logs</h2>
+          <p>Opening a log moves the vehicle to In Shop · Closing restores it to Available</p>
         </div>
-        <form className="form-grid" onSubmit={createMaintenance}>
-          <label>
-            Vehicle
-            <select name="vehicleId" required>
-              {eligibleVehicles.map((vehicle) => (
-                <option key={vehicle.id} value={vehicle.id}>
-                  {vehicle.registrationNumber} - {vehicle.model}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Work Required
-            <input name="title" placeholder="Oil change" required />
-          </label>
-          <label>
-            Estimated Cost
-            <input name="cost" min="0" type="number" required />
-          </label>
-          <button className="primary-button" disabled={!eligibleVehicles.length} type="submit">
-            <Plus size={16} />
-            Create Log
-          </button>
-        </form>
-      </section>
+        <button
+          className="primary-button"
+          disabled={!eligibleVehicles.length}
+          onClick={() => setShowModal(true)}
+          title={!eligibleVehicles.length ? "No available vehicles" : undefined}
+          type="button"
+        >
+          <Plus size={13} />
+          Open Log
+        </button>
+      </div>
 
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <h2>Maintenance Logs</h2>
-            <p>Closing a log restores the vehicle to Available unless retired.</p>
-          </div>
-        </div>
+      <div className="panel table-panel">
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
                 <th>Vehicle</th>
-                <th>Work</th>
+                <th>Work Required</th>
                 <th>Cost</th>
                 <th>Opened</th>
                 <th>Status</th>
@@ -121,23 +96,28 @@ export function Maintenance({ data, setData }: MaintenanceProps) {
                 <tr className="empty-state-row">
                   <td colSpan={6}>
                     <div className="empty-state">
-                      <ClipboardList size={26} className="empty-state-icon" />
+                      <ClipboardList size={24} className="empty-state-icon" />
                       <p>No maintenance logs</p>
-                      <small>Open a maintenance log to move a vehicle into shop status.</small>
+                      <small>Open a log to move a vehicle into shop status.</small>
                     </div>
                   </td>
                 </tr>
               ) : (
                 data.maintenanceLogs.map((log) => (
                   <tr key={log.id}>
-                    <td>{getVehicleName(data, log.vehicleId)}</td>
+                    <td style={{ fontWeight: 600, color: "var(--text-1)" }}>{getVehicleName(data, log.vehicleId)}</td>
                     <td>{log.title}</td>
                     <td>{formatMoney(log.cost)}</td>
                     <td>{log.openedAt}</td>
                     <td><StatusBadge status={log.status} /></td>
                     <td>
-                      <button className="small-button" disabled={log.status === "Closed"} onClick={() => closeMaintenance(log.id)} type="button">
-                        <Check size={14} />
+                      <button
+                        className="small-button"
+                        disabled={log.status === "Closed"}
+                        onClick={() => closeMaintenance(log.id)}
+                        type="button"
+                      >
+                        <Check size={12} />
                         Close
                       </button>
                     </td>
@@ -147,7 +127,47 @@ export function Maintenance({ data, setData }: MaintenanceProps) {
             </tbody>
           </table>
         </div>
-      </section>
+      </div>
+
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <h3>Open Maintenance Log</h3>
+                <p>Opening a log moves the vehicle to In Shop immediately.</p>
+              </div>
+              <button className="modal-close" onClick={() => setShowModal(false)} type="button">
+                <X size={14} />
+              </button>
+            </div>
+            <form className="form-grid" onSubmit={createMaintenance}>
+              <label>
+                Vehicle
+                <select name="vehicleId" required>
+                  {eligibleVehicles.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.registrationNumber} — {v.model}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Work Required
+                <input name="title" placeholder="Oil change" required />
+              </label>
+              <label>
+                Estimated Cost
+                <input name="cost" min="0" placeholder="5000" type="number" required />
+              </label>
+              <button className="primary-button" type="submit" style={{ marginTop: "4px" }}>
+                <Plus size={13} />
+                Create Log
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

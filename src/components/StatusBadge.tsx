@@ -1,13 +1,5 @@
-type StatusBadgeProps = {
-  status: string;
-};
+type StatusBadgeProps = { status: string };
 
-/**
- * Explicit map: display string → CSS class.
- * Expired → "expired" (rose/pink) — visually distinct from Suspended (red).
- * Completed → "completed" (teal) — distinct from Available (green).
- * Falls back to slugified string for unknown statuses.
- */
 const CLASS_MAP: Record<string, string> = {
   Available:  "available",
   Valid:      "valid",
