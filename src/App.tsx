@@ -2,8 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Truck } from "lucide-react";
 import { Layout } from "./components/Layout";
 import { users } from "./data/seed";
-import { loadData } from "./logic/storage";
-import { fetchAppData, resetDatabaseApi } from "./logic/api";
+import { loadData, resetData, saveData } from "./logic/storage";
 import { Dashboard } from "./pages/Dashboard";
 import { Drivers } from "./pages/Drivers";
 import { Expenses } from "./pages/Expenses";
@@ -13,8 +12,7 @@ import { Trips } from "./pages/Trips";
 import { Vehicles } from "./pages/Vehicles";
 import type { AppData, Page, User } from "./types";
 
-const ROLES = ["Fleet Manager", "Dispatcher", "Safety Officer", "Financial Analyst"] as const;
-type LoginRole = typeof ROLES[number];
+const ROLES = users.map((user) => user.role);
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -22,7 +20,7 @@ export default function App() {
   const [data, setData]               = useState<AppData>(() => loadData());
 
   // Login form state
-  const [selectedRole, setSelectedRole] = useState<LoginRole>(ROLES[0]);
+  const [selectedRole, setSelectedRole] = useState<User["role"]>(ROLES[0]);
   const [loginError, setLoginError]     = useState("");
 
   useEffect(() => { saveData(data); }, [data]);
@@ -149,7 +147,7 @@ export default function App() {
                 Role (RBAC)
                 <select
                   value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value as LoginRole)}
+                  onChange={(e) => setSelectedRole(e.target.value as User["role"])}
                 >
                   {ROLES.map((r) => (
                     <option key={r} value={r}>{r}</option>

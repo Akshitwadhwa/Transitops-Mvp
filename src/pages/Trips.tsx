@@ -1,7 +1,7 @@
+import { useState } from "react";
 import { Check, Play, Plus, Trash2, X } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
-import { createTrip, dispatchTripApi, completeTripApi, cancelTripApi, deleteTripApi, fetchAppData } from "../logic/api";
-import { getDriverName, getVehicleName } from "../logic/rules";
+import { cancelTrip, completeTrip, dispatchTrip, getDriverName, getVehicleName } from "../logic/rules";
 import type { AppData, Trip } from "../types";
 
 type TripsProps = {
@@ -14,21 +14,13 @@ export function Trips({ data, setData }: TripsProps) {
 
   const availableVehicles = data.vehicles.filter((v) => v.status === "Available");
   const availableDrivers  = data.drivers.filter((d)  => d.status === "Available");
-
-  async function reloadData() {
-    try {
-      const freshData = await fetchAppData();
-      setData(freshData);
-    } catch (e) {
-      console.error(e);
-    }
-  }
+  const canCreate = availableVehicles.length > 0 && availableDrivers.length > 0;
 
   async function addTrip(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
-    const tripInput = {
+    const tripInput: Trip = {
       id: crypto.randomUUID(),
       source: String(form.get("source")).trim(),
       destination: String(form.get("destination")).trim(),
@@ -37,8 +29,9 @@ export function Trips({ data, setData }: TripsProps) {
       cargoWeightKg: Number(form.get("cargoWeightKg")),
       plannedDistanceKm: Number(form.get("plannedDistanceKm")),
       revenue: Number(form.get("revenue")),
+      status: "Draft",
     };
-    setData((cur) => ({ ...cur, trips: [trip, ...cur.trips] }));
+    setData((cur) => ({ ...cur, trips: [tripInput, ...cur.trips] }));
     event.currentTarget.reset();
     setShowModal(false);
   }
@@ -51,13 +44,16 @@ export function Trips({ data, setData }: TripsProps) {
     });
   }
 
-  async function deleteTrip(tripId: string) {
-    try {
-      await deleteTripApi(tripId);
-      await reloadData();
-    } catch (error: any) {
-      window.alert(error.message || "Failed to delete trip.");
-    }
+  function handleComplete(tripId: string) {
+    setData((cur) => completeTrip(cur, tripId));
+  }
+
+  function handleCancel(tripId: string) {
+    setData((cur) => cancelTrip(cur, tripId));
+  }
+
+  function deleteTrip(tripId: string) {
+    setData((cur) => ({ ...cur, trips: cur.trips.filter((trip) => trip.id !== tripId) }));
   }
 
   return (
@@ -98,11 +94,12 @@ export function Trips({ data, setData }: TripsProps) {
             <tbody>
               {data.trips.length === 0 ? (
                 <tr>
-                  <td className="empty-cell" colSpan={6}>No trips yet. Create a draft trip to get started.</td>
+                  <td className="empty-cell" colSpan={7}>No trips yet. Create a draft trip to get started.</td>
                 </tr>
               ) : (
                 data.trips.map((trip) => (
                   <tr key={trip.id}>
+                    <td>{trip.id.slice(0, 8)}</td>
                     <td>{trip.source} to {trip.destination}</td>
                     <td>{getVehicleName(data, trip.vehicleId)}</td>
                     <td>{getDriverName(data, trip.driverId)}</td>

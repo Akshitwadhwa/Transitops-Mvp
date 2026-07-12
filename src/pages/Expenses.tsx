@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Fuel, Plus, X } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 import { formatMoney, getVehicleName } from "../logic/rules";
 import type { AppData, Expense } from "../types";
-import { createExpense, deleteExpenseApi } from "../logic/api";
 
 type ExpensesProps = {
   data: AppData;
@@ -16,16 +15,21 @@ export function Expenses({ data, setData }: ExpensesProps) {
     event.preventDefault();
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
-    const expenseInput = {
+    const expenseInput: Expense = {
+      id: crypto.randomUUID(),
       vehicleId: String(form.get("vehicleId")),
       type: String(form.get("type")) as Expense["type"],
       amount: Number(form.get("amount")),
       liters: form.get("liters") ? Number(form.get("liters")) : undefined,
       date: String(form.get("date")),
     };
-    setData((cur) => ({ ...cur, expenses: [expense, ...cur.expenses] }));
+    setData((cur) => ({ ...cur, expenses: [expenseInput, ...cur.expenses] }));
     event.currentTarget.reset();
     setShowModal(false);
+  }
+
+  function handleDelete(expenseId: string) {
+    setData((cur) => ({ ...cur, expenses: cur.expenses.filter((expense) => expense.id !== expenseId) }));
   }
 
   const totalCost = data.expenses.reduce((s, e) => s + e.amount, 0);

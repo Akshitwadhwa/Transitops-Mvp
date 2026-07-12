@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Plus, Truck, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
 import type { AppData, Vehicle } from "../types";
-import { createVehicle, updateVehicleApi } from "../logic/api";
 
 type VehiclesProps = {
   data: AppData;
@@ -30,7 +29,7 @@ export function Vehicles({ data, setData }: VehiclesProps) {
       maxLoadKg: Number(form.get("maxLoadKg")),
       odometerKm: Number(form.get("odometerKm")),
       acquisitionCost: Number(form.get("acquisitionCost")),
-      status: editingVehicle ? (String(form.get("status")) as Vehicle["status"]) : undefined,
+      status: "Available",
     };
     setData((cur) => ({ ...cur, vehicles: [vehicle, ...cur.vehicles] }));
     event.currentTarget.reset();
@@ -64,7 +63,6 @@ export function Vehicles({ data, setData }: VehiclesProps) {
                 <th>Odometer</th>
                 <th>Acq. Cost</th>
                 <th>Status</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -79,19 +77,9 @@ export function Vehicles({ data, setData }: VehiclesProps) {
                     <td>{vehicle.model}</td>
                     <td>{vehicle.type}</td>
                     <td>{vehicle.maxLoadKg} kg</td>
-                    <td>{vehicle.region}</td>
+                    <td>{vehicle.odometerKm.toLocaleString()} km</td>
+                    <td>₹{vehicle.acquisitionCost.toLocaleString("en-IN")}</td>
                     <td><StatusBadge status={vehicle.status} /></td>
-                    <td>
-                      <button
-                        className="small-button"
-                        onClick={() => setEditingVehicle(vehicle)}
-                        title="Edit vehicle"
-                        type="button"
-                      >
-                        <Edit2 size={14} />
-                        Edit
-                      </button>
-                    </td>
                   </tr>
                 ))
               )}
