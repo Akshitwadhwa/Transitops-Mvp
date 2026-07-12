@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Fuel, Plus } from "lucide-react";
 import { formatMoney, getVehicleName } from "../logic/rules";
 import type { AppData, Expense } from "../types";
 
@@ -91,15 +91,27 @@ export function Expenses({ data, setData }: ExpensesProps) {
               </tr>
             </thead>
             <tbody>
-              {data.expenses.map((expense) => (
-                <tr key={expense.id}>
-                  <td>{getVehicleName(data, expense.vehicleId)}</td>
-                  <td>{expense.type}</td>
-                  <td>{formatMoney(expense.amount)}</td>
-                  <td>{expense.liters ?? "-"}</td>
-                  <td>{expense.date}</td>
+              {data.expenses.length === 0 ? (
+                <tr className="empty-state-row">
+                  <td colSpan={5}>
+                    <div className="empty-state">
+                      <Fuel size={26} className="empty-state-icon" />
+                      <p>No expenses logged</p>
+                      <small>Log fuel, toll, or maintenance costs using the form.</small>
+                    </div>
+                  </td>
                 </tr>
-              ))}
+              ) : (
+                data.expenses.map((expense) => (
+                  <tr key={expense.id}>
+                    <td>{getVehicleName(data, expense.vehicleId)}</td>
+                    <td>{expense.type}</td>
+                    <td>{formatMoney(expense.amount)}</td>
+                    <td>{expense.liters ?? "—"}</td>
+                    <td>{expense.date}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

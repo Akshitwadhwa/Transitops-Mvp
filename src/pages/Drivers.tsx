@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Plus, UserRound } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
 import { isLicenseExpired } from "../logic/rules";
 import type { AppData, Driver } from "../types";
@@ -98,16 +98,28 @@ export function Drivers({ data, setData }: DriversProps) {
               </tr>
             </thead>
             <tbody>
-              {data.drivers.map((driver) => (
-                <tr key={driver.id}>
-                  <td>{driver.name}</td>
-                  <td>{driver.licenseNumber}</td>
-                  <td>{driver.licenseExpiryDate}</td>
-                  <td>{driver.safetyScore}</td>
-                  <td><StatusBadge status={driver.status} /></td>
-                  <td><StatusBadge status={isLicenseExpired(driver) ? "Expired" : "Valid"} /></td>
+              {data.drivers.length === 0 ? (
+                <tr className="empty-state-row">
+                  <td colSpan={6}>
+                    <div className="empty-state">
+                      <UserRound size={26} className="empty-state-icon" />
+                      <p>No drivers on record</p>
+                      <small>Add drivers using the form to build your dispatch pool.</small>
+                    </div>
+                  </td>
                 </tr>
-              ))}
+              ) : (
+                data.drivers.map((driver) => (
+                  <tr key={driver.id}>
+                    <td>{driver.name}</td>
+                    <td>{driver.licenseNumber}</td>
+                    <td>{driver.licenseExpiryDate}</td>
+                    <td>{driver.safetyScore}</td>
+                    <td><StatusBadge status={driver.status} /></td>
+                    <td><StatusBadge status={isLicenseExpired(driver) ? "Expired" : "Valid"} /></td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

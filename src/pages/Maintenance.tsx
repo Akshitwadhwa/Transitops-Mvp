@@ -1,4 +1,4 @@
-import { Check, Plus } from "lucide-react";
+import { Check, ClipboardList, Plus } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
 import { formatMoney, getVehicleName } from "../logic/rules";
 import type { AppData, MaintenanceLog } from "../types";
@@ -117,21 +117,33 @@ export function Maintenance({ data, setData }: MaintenanceProps) {
               </tr>
             </thead>
             <tbody>
-              {data.maintenanceLogs.map((log) => (
-                <tr key={log.id}>
-                  <td>{getVehicleName(data, log.vehicleId)}</td>
-                  <td>{log.title}</td>
-                  <td>{formatMoney(log.cost)}</td>
-                  <td>{log.openedAt}</td>
-                  <td><StatusBadge status={log.status} /></td>
-                  <td>
-                    <button className="small-button" disabled={log.status === "Closed"} onClick={() => closeMaintenance(log.id)} type="button">
-                      <Check size={14} />
-                      Close
-                    </button>
+              {data.maintenanceLogs.length === 0 ? (
+                <tr className="empty-state-row">
+                  <td colSpan={6}>
+                    <div className="empty-state">
+                      <ClipboardList size={26} className="empty-state-icon" />
+                      <p>No maintenance logs</p>
+                      <small>Open a maintenance log to move a vehicle into shop status.</small>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                data.maintenanceLogs.map((log) => (
+                  <tr key={log.id}>
+                    <td>{getVehicleName(data, log.vehicleId)}</td>
+                    <td>{log.title}</td>
+                    <td>{formatMoney(log.cost)}</td>
+                    <td>{log.openedAt}</td>
+                    <td><StatusBadge status={log.status} /></td>
+                    <td>
+                      <button className="small-button" disabled={log.status === "Closed"} onClick={() => closeMaintenance(log.id)} type="button">
+                        <Check size={14} />
+                        Close
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

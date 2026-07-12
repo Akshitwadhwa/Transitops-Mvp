@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Plus, Truck } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
 import type { AppData, Vehicle } from "../types";
 
@@ -108,16 +108,28 @@ export function Vehicles({ data, setData }: VehiclesProps) {
               </tr>
             </thead>
             <tbody>
-              {data.vehicles.map((vehicle) => (
-                <tr key={vehicle.id}>
-                  <td>{vehicle.registrationNumber}</td>
-                  <td>{vehicle.model}</td>
-                  <td>{vehicle.type}</td>
-                  <td>{vehicle.maxLoadKg} kg</td>
-                  <td>{vehicle.region}</td>
-                  <td><StatusBadge status={vehicle.status} /></td>
+              {data.vehicles.length === 0 ? (
+                <tr className="empty-state-row">
+                  <td colSpan={6}>
+                    <div className="empty-state">
+                      <Truck size={26} className="empty-state-icon" />
+                      <p>No vehicles registered yet</p>
+                      <small>Use the form to add your first vehicle to the fleet.</small>
+                    </div>
+                  </td>
                 </tr>
-              ))}
+              ) : (
+                data.vehicles.map((vehicle) => (
+                  <tr key={vehicle.id}>
+                    <td>{vehicle.registrationNumber}</td>
+                    <td>{vehicle.model}</td>
+                    <td>{vehicle.type}</td>
+                    <td>{vehicle.maxLoadKg} kg</td>
+                    <td>{vehicle.region}</td>
+                    <td><StatusBadge status={vehicle.status} /></td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
