@@ -1,4 +1,4 @@
-import { Check, Play, Plus, X } from "lucide-react";
+import { Check, Play, Plus, Trash2, X } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
 import { cancelTrip, completeTrip, dispatchTrip, getDriverName, getVehicleName } from "../logic/rules";
 import type { AppData, Trip } from "../types";
@@ -39,6 +39,13 @@ export function Trips({ data, setData }: TripsProps) {
       }
       return result.data;
     });
+  }
+
+  function deleteTrip(tripId: string) {
+    setData((current) => ({
+      ...current,
+      trips: current.trips.filter((t) => t.id !== tripId),
+    }));
   }
 
   return (
@@ -139,6 +146,12 @@ export function Trips({ data, setData }: TripsProps) {
                         <X size={14} />
                         Cancel
                       </button>
+                      {trip.status === "Draft" && (
+                        <button className="small-button danger" onClick={() => deleteTrip(trip.id)} type="button">
+                          <Trash2 size={14} />
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

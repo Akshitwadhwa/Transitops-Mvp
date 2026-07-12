@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { formatMoney, getVehicleName } from "../logic/rules";
 import type { AppData, Expense } from "../types";
 
@@ -22,6 +22,13 @@ export function Expenses({ data, setData }: ExpensesProps) {
 
     setData((current) => ({ ...current, expenses: [expense, ...current.expenses] }));
     event.currentTarget.reset();
+  }
+
+  function deleteExpense(expenseId: string) {
+    setData((current) => ({
+      ...current,
+      expenses: current.expenses.filter((e) => e.id !== expenseId),
+    }));
   }
 
   return (
@@ -88,6 +95,7 @@ export function Expenses({ data, setData }: ExpensesProps) {
                 <th>Amount</th>
                 <th>Liters</th>
                 <th>Date</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -98,6 +106,16 @@ export function Expenses({ data, setData }: ExpensesProps) {
                   <td>{formatMoney(expense.amount)}</td>
                   <td>{expense.liters ?? "-"}</td>
                   <td>{expense.date}</td>
+                  <td>
+                    <button
+                      className="small-button danger"
+                      onClick={() => deleteExpense(expense.id)}
+                      type="button"
+                    >
+                      <Trash2 size={14} />
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -107,3 +125,4 @@ export function Expenses({ data, setData }: ExpensesProps) {
     </div>
   );
 }
+
