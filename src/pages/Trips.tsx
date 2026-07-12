@@ -1,6 +1,7 @@
 import { Check, Play, Plus, Trash2, X } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
-import { cancelTrip, completeTrip, dispatchTrip, getDriverName, getVehicleName } from "../logic/rules";
+import { createTrip, dispatchTripApi, completeTripApi, cancelTripApi, deleteTripApi, fetchAppData } from "../logic/api";
+import { getDriverName, getVehicleName } from "../logic/rules";
 import type { AppData, Trip } from "../types";
 
 type TripsProps = {
@@ -14,10 +15,20 @@ export function Trips({ data, setData }: TripsProps) {
   const availableVehicles = data.vehicles.filter((v) => v.status === "Available");
   const availableDrivers  = data.drivers.filter((d)  => d.status === "Available");
 
-  function addTrip(event: React.FormEvent<HTMLFormElement>) {
+  async function reloadData() {
+    try {
+      const freshData = await fetchAppData();
+      setData(freshData);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function addTrip(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const trip: Trip = {
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const tripInput = {
       id: crypto.randomUUID(),
       source: String(form.get("source")).trim(),
       destination: String(form.get("destination")).trim(),
@@ -26,7 +37,6 @@ export function Trips({ data, setData }: TripsProps) {
       cargoWeightKg: Number(form.get("cargoWeightKg")),
       plannedDistanceKm: Number(form.get("plannedDistanceKm")),
       revenue: Number(form.get("revenue")),
-      status: "Draft",
     };
     setData((cur) => ({ ...cur, trips: [trip, ...cur.trips] }));
     event.currentTarget.reset();
@@ -41,11 +51,13 @@ export function Trips({ data, setData }: TripsProps) {
     });
   }
 
-  function deleteTrip(tripId: string) {
-    setData((current) => ({
-      ...current,
-      trips: current.trips.filter((item) => item.id !== tripId),
-    }));
+  async function deleteTrip(tripId: string) {
+    try {
+      await deleteTripApi(tripId);
+      await reloadData();
+    } catch (error: any) {
+      window.alert(error.message || "Failed to delete trip.");
+    }
   }
 
   return (
@@ -102,11 +114,11 @@ export function Trips({ data, setData }: TripsProps) {
                           <Play size={14} />
                           Dispatch
                         </button>
-                        <button className="small-button" disabled={trip.status !== "Dispatched"} onClick={() => setData((current) => completeTrip(current, trip.id))} type="button">
+                        <button className="small-button" disabled={trip.status !== "Dispatched"} onClick={() => handleComplete(trip.id)} type="button">
                           <Check size={14} />
                           Complete
                         </button>
-                        <button className="small-button danger" disabled={trip.status === "Completed" || trip.status === "Cancelled"} onClick={() => setData((current) => cancelTrip(current, trip.id))} type="button">
+                        <button className="small-button danger" disabled={trip.status === "Completed" || trip.status === "Cancelled"} onClick={() => handleCancel(trip.id)} type="button">
                           <X size={14} />
                           Cancel
                         </button>

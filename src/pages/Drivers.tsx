@@ -4,6 +4,8 @@ import { StatusBadge } from "../components/StatusBadge";
 import { isLicenseExpired } from "../logic/rules";
 import type { AppData, Driver } from "../types";
 
+import { createDriver } from "../logic/api";
+
 type DriversProps = {
   data: AppData;
   setData: React.Dispatch<React.SetStateAction<AppData>>;
@@ -14,7 +16,8 @@ export function Drivers({ data, setData }: DriversProps) {
 
   function addDriver(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const licenseNumber = String(form.get("licenseNumber")).trim().toUpperCase();
     if (data.drivers.some((d) => d.licenseNumber === licenseNumber)) {
       window.alert("License number must be unique.");
@@ -28,7 +31,6 @@ export function Drivers({ data, setData }: DriversProps) {
       licenseExpiryDate: String(form.get("licenseExpiryDate")),
       contactNumber: String(form.get("contactNumber")).trim(),
       safetyScore: Number(form.get("safetyScore")),
-      status: "Available",
     };
     setData((cur) => ({ ...cur, drivers: [driver, ...cur.drivers] }));
     event.currentTarget.reset();

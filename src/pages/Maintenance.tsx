@@ -3,6 +3,7 @@ import { Check, ClipboardList, Plus, X } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
 import { formatMoney, getVehicleName } from "../logic/rules";
 import type { AppData, MaintenanceLog } from "../types";
+import { openMaintenanceApi, closeMaintenanceApi, fetchAppData } from "../logic/api";
 
 type MaintenanceProps = {
   data: AppData;
@@ -14,9 +15,19 @@ export function Maintenance({ data, setData }: MaintenanceProps) {
 
   const eligibleVehicles = data.vehicles.filter((v) => v.status === "Available");
 
-  function createMaintenance(event: React.FormEvent<HTMLFormElement>) {
+  async function reloadData() {
+    try {
+      const freshData = await fetchAppData();
+      setData(freshData);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function createMaintenance(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const vehicleId = String(form.get("vehicleId"));
     const log: MaintenanceLog = {
       id: crypto.randomUUID(),

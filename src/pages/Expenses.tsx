@@ -3,6 +3,8 @@ import { Fuel, Plus, X } from "lucide-react";
 import { formatMoney, getVehicleName } from "../logic/rules";
 import type { AppData, Expense } from "../types";
 
+import { createExpense } from "../logic/api";
+
 type ExpensesProps = {
   data: AppData;
   setData: React.Dispatch<React.SetStateAction<AppData>>;
@@ -13,9 +15,9 @@ export function Expenses({ data, setData }: ExpensesProps) {
 
   function addExpense(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const expense: Expense = {
-      id: crypto.randomUUID(),
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const expenseInput = {
       vehicleId: String(form.get("vehicleId")),
       type: String(form.get("type")) as Expense["type"],
       amount: Number(form.get("amount")),
