@@ -29,6 +29,7 @@ export const seedData: AppData = {
       maxLoadKg: 1250,
       odometerKm: 63500,
       acquisitionCost: 870000,
+      // On Trip — paired with dispatched trip t-1
       status: "On Trip",
     },
     {
@@ -40,6 +41,7 @@ export const seedData: AppData = {
       maxLoadKg: 3500,
       odometerKm: 81400,
       acquisitionCost: 1750000,
+      // In Shop — active maintenance log m-1
       status: "In Shop",
     },
     {
@@ -52,6 +54,28 @@ export const seedData: AppData = {
       odometerKm: 28800,
       acquisitionCost: 1120000,
       status: "Available",
+    },
+    {
+      id: "v-5",
+      registrationNumber: "RJ-14-PQ-5500",
+      model: "Force Traveller Cargo",
+      type: "Van",
+      region: "North",
+      maxLoadKg: 900,
+      odometerKm: 55200,
+      acquisitionCost: 740000,
+      status: "Available",
+    },
+    {
+      id: "v-6",
+      registrationNumber: "TN-09-MZ-3310",
+      model: "SML Isuzu Samrat",
+      type: "Truck",
+      region: "South",
+      maxLoadKg: 5000,
+      odometerKm: 120000,
+      acquisitionCost: 2200000,
+      status: "Retired",
     },
   ],
   drivers: [
@@ -73,6 +97,7 @@ export const seedData: AppData = {
       licenseExpiryDate: "2029-01-03",
       contactNumber: "+91 99887 76554",
       safetyScore: 88,
+      // On Trip — paired with dispatched trip t-1
       status: "On Trip",
     },
     {
@@ -80,6 +105,7 @@ export const seedData: AppData = {
       name: "Sameer Khan",
       licenseNumber: "MH1420245511",
       licenseCategory: "LMV",
+      // Expired license — intentional seed for demo validation test
       licenseExpiryDate: "2025-11-11",
       contactNumber: "+91 91234 55678",
       safetyScore: 72,
@@ -93,7 +119,28 @@ export const seedData: AppData = {
       licenseExpiryDate: "2027-09-27",
       contactNumber: "+91 90000 12121",
       safetyScore: 63,
+      // Suspended — blocked from dispatch
       status: "Suspended",
+    },
+    {
+      id: "d-5",
+      name: "Vikram Pillai",
+      licenseNumber: "KL1120281045",
+      licenseCategory: "HMV",
+      licenseExpiryDate: "2028-12-15",
+      contactNumber: "+91 97001 22334",
+      safetyScore: 91,
+      status: "Available",
+    },
+    {
+      id: "d-6",
+      name: "Priya Rajput",
+      licenseNumber: "RJ0320299988",
+      licenseCategory: "Transport",
+      licenseExpiryDate: "2030-03-22",
+      contactNumber: "+91 93456 78901",
+      safetyScore: 97,
+      status: "Available",
     },
   ],
   trips: [
@@ -106,6 +153,7 @@ export const seedData: AppData = {
       cargoWeightKg: 870,
       plannedDistanceKm: 148,
       revenue: 14500,
+      // Active dispatched trip — vehicle v-2 and driver d-2 are On Trip
       status: "Dispatched",
     },
     {
@@ -113,10 +161,33 @@ export const seedData: AppData = {
       source: "Delhi Depot",
       destination: "Noida Retail Park",
       vehicleId: "v-1",
-      driverId: "d-1",
+      driverId: "d-3",
       cargoWeightKg: 520,
       plannedDistanceKm: 42,
       revenue: 5200,
+      // Draft with expired-license driver — demonstrates dispatch block rule
+      status: "Draft",
+    },
+    {
+      id: "t-3",
+      source: "Chennai Port",
+      destination: "Bengaluru Depot",
+      vehicleId: "v-5",
+      driverId: "d-5",
+      cargoWeightKg: 800,
+      plannedDistanceKm: 346,
+      revenue: 31000,
+      status: "Completed",
+    },
+    {
+      id: "t-4",
+      source: "Jaipur Cold Store",
+      destination: "Delhi NCR Hub",
+      vehicleId: "v-4",
+      driverId: "d-1",
+      cargoWeightKg: 950,
+      plannedDistanceKm: 275,
+      revenue: 22500,
       status: "Draft",
     },
   ],
@@ -127,12 +198,26 @@ export const seedData: AppData = {
       title: "Brake pad replacement",
       cost: 18500,
       openedAt: "2026-07-11",
+      // Active — vehicle v-3 is In Shop because of this log
       status: "Active",
+    },
+    {
+      id: "m-2",
+      vehicleId: "v-5",
+      title: "Oil change and filter service",
+      cost: 7200,
+      openedAt: "2026-07-01",
+      status: "Closed",
     },
   ],
   expenses: [
     { id: "e-1", vehicleId: "v-2", type: "Fuel", amount: 6400, liters: 72, date: "2026-07-10" },
     { id: "e-2", vehicleId: "v-3", type: "Maintenance", amount: 18500, date: "2026-07-11" },
     { id: "e-3", vehicleId: "v-2", type: "Toll", amount: 1100, date: "2026-07-10" },
+    { id: "e-4", vehicleId: "v-5", type: "Maintenance", amount: 7200, date: "2026-07-01" },
+    { id: "e-5", vehicleId: "v-5", type: "Fuel", amount: 9800, liters: 110, date: "2026-06-28" },
+    { id: "e-6", vehicleId: "v-4", type: "Fuel", amount: 5600, liters: 63, date: "2026-07-09" },
+    { id: "e-7", vehicleId: "v-1", type: "Toll", amount: 320, date: "2026-07-08" },
+    { id: "e-8", vehicleId: "v-2", type: "Fuel", amount: 7100, liters: 80, date: "2026-07-07" },
   ],
 };

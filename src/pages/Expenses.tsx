@@ -77,23 +77,17 @@ export function Expenses({ data, setData }: ExpensesProps) {
             </thead>
             <tbody>
               {data.expenses.length === 0 ? (
-                <tr className="empty-state-row">
-                  <td colSpan={5}>
-                    <div className="empty-state">
-                      <Fuel size={24} className="empty-state-icon" />
-                      <p>No expenses logged</p>
-                      <small>Log fuel, toll, or maintenance costs using the button above.</small>
-                    </div>
-                  </td>
+                <tr>
+                  <td className="empty-cell" colSpan={5}>No expenses logged yet. Add a fuel, toll, or maintenance expense to get started.</td>
                 </tr>
               ) : (
-                data.expenses.map((e) => (
-                  <tr key={e.id}>
-                    <td style={{ fontWeight: 600, color: "var(--text-1)" }}>{getVehicleName(data, e.vehicleId)}</td>
-                    <td>{e.type}</td>
-                    <td>{formatMoney(e.amount)}</td>
-                    <td>{e.liters ?? "—"}</td>
-                    <td>{e.date}</td>
+                data.expenses.map((expense) => (
+                  <tr key={expense.id}>
+                    <td>{getVehicleName(data, expense.vehicleId)}</td>
+                    <td>{expense.type}</td>
+                    <td>{formatMoney(expense.amount)}</td>
+                    <td>{expense.liters ?? "-"}</td>
+                    <td>{expense.date}</td>
                   </tr>
                 ))
               )}

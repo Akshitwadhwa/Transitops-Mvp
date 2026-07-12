@@ -66,25 +66,18 @@ export function Vehicles({ data, setData }: VehiclesProps) {
             </thead>
             <tbody>
               {data.vehicles.length === 0 ? (
-                <tr className="empty-state-row">
-                  <td colSpan={7}>
-                    <div className="empty-state">
-                      <Truck size={24} className="empty-state-icon" />
-                      <p>No vehicles registered yet</p>
-                      <small>Use Add Vehicle to register your first vehicle.</small>
-                    </div>
-                  </td>
+                <tr>
+                  <td className="empty-cell" colSpan={6}>No vehicles registered yet. Add your first vehicle using the form.</td>
                 </tr>
               ) : (
-                data.vehicles.map((v) => (
-                  <tr key={v.id}>
-                    <td style={{ fontWeight: 600, color: "var(--text-1)" }}>{v.registrationNumber}</td>
-                    <td>{v.model}</td>
-                    <td>{v.type}</td>
-                    <td>{v.maxLoadKg.toLocaleString("en-IN")} kg</td>
-                    <td>{v.odometerKm.toLocaleString("en-IN")}</td>
-                    <td>{v.acquisitionCost.toLocaleString("en-IN")}</td>
-                    <td><StatusBadge status={v.status} /></td>
+                data.vehicles.map((vehicle) => (
+                  <tr key={vehicle.id}>
+                    <td>{vehicle.registrationNumber}</td>
+                    <td>{vehicle.model}</td>
+                    <td>{vehicle.type}</td>
+                    <td>{vehicle.maxLoadKg} kg</td>
+                    <td>{vehicle.region}</td>
+                    <td><StatusBadge status={vehicle.status} /></td>
                   </tr>
                 ))
               )}

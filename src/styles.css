@@ -2080,24 +2080,24 @@ body {
 .node-b { right: 9%; top: 16%; }
 .node-c { right: 20%; bottom: 24%; }
 
-.route-zoom {
-  align-items: center;
-  background: #fff;
-  border-radius: 50%;
-  color: #111827;
-  display: flex;
-  font-size: 1.35rem;
-  height: 44px;
-  justify-content: center;
-  position: absolute;
-  right: 22px;
-  width: 44px;
+.retired,
+.suspended,
+.expired,
+.cancelled,
+.off-duty {
+  background: #fae0df;
+  color: #9e2a2a;
 }
 
-.route-zoom.plus { bottom: 72px; }
-.route-zoom.minus { bottom: 20px; }
+.empty-cell {
+  color: #8a9ea8;
+  font-size: 0.88rem;
+  font-style: italic;
+  padding: 28px 16px !important;
+  text-align: center !important;
+}
 
-.route-trip-list {
+.form-grid {
   display: grid;
   gap: 10px;
   margin-top: 16px;
