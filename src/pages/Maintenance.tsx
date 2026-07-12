@@ -117,21 +117,27 @@ export function Maintenance({ data, setData }: MaintenanceProps) {
               </tr>
             </thead>
             <tbody>
-              {data.maintenanceLogs.map((log) => (
-                <tr key={log.id}>
-                  <td>{getVehicleName(data, log.vehicleId)}</td>
-                  <td>{log.title}</td>
-                  <td>{formatMoney(log.cost)}</td>
-                  <td>{log.openedAt}</td>
-                  <td><StatusBadge status={log.status} /></td>
-                  <td>
-                    <button className="small-button" disabled={log.status === "Closed"} onClick={() => closeMaintenance(log.id)} type="button">
-                      <Check size={14} />
-                      Close
-                    </button>
-                  </td>
+              {data.maintenanceLogs.length === 0 ? (
+                <tr>
+                  <td className="empty-cell" colSpan={6}>No maintenance logs yet. Open a log to begin tracking vehicle service.</td>
                 </tr>
-              ))}
+              ) : (
+                data.maintenanceLogs.map((log) => (
+                  <tr key={log.id}>
+                    <td>{getVehicleName(data, log.vehicleId)}</td>
+                    <td>{log.title}</td>
+                    <td>{formatMoney(log.cost)}</td>
+                    <td>{log.openedAt}</td>
+                    <td><StatusBadge status={log.status} /></td>
+                    <td>
+                      <button className="small-button" disabled={log.status === "Closed"} onClick={() => closeMaintenance(log.id)} type="button">
+                        <Check size={14} />
+                        Close
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

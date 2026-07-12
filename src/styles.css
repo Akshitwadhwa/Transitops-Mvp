@@ -337,9 +337,18 @@ th {
 .retired,
 .suspended,
 .expired,
-.cancelled {
+.cancelled,
+.off-duty {
   background: #fae0df;
   color: #9e2a2a;
+}
+
+.empty-cell {
+  color: #8a9ea8;
+  font-size: 0.88rem;
+  font-style: italic;
+  padding: 28px 16px !important;
+  text-align: center !important;
 }
 
 .form-grid {

@@ -98,16 +98,22 @@ export function Drivers({ data, setData }: DriversProps) {
               </tr>
             </thead>
             <tbody>
-              {data.drivers.map((driver) => (
-                <tr key={driver.id}>
-                  <td>{driver.name}</td>
-                  <td>{driver.licenseNumber}</td>
-                  <td>{driver.licenseExpiryDate}</td>
-                  <td>{driver.safetyScore}</td>
-                  <td><StatusBadge status={driver.status} /></td>
-                  <td><StatusBadge status={isLicenseExpired(driver) ? "Expired" : "Valid"} /></td>
+              {data.drivers.length === 0 ? (
+                <tr>
+                  <td className="empty-cell" colSpan={6}>No drivers added yet. Register your first driver using the form.</td>
                 </tr>
-              ))}
+              ) : (
+                data.drivers.map((driver) => (
+                  <tr key={driver.id}>
+                    <td>{driver.name}</td>
+                    <td>{driver.licenseNumber}</td>
+                    <td>{driver.licenseExpiryDate}</td>
+                    <td>{driver.safetyScore}</td>
+                    <td><StatusBadge status={driver.status} /></td>
+                    <td><StatusBadge status={isLicenseExpired(driver) ? "Expired" : "Valid"} /></td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
