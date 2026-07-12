@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Edit2, Plus, X } from "lucide-react";
+import { Plus, Truck, X } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
 import type { AppData, Vehicle } from "../types";
 import { createVehicle, updateVehicleApi } from "../logic/api";
@@ -10,22 +10,19 @@ type VehiclesProps = {
 };
 
 export function Vehicles({ data, setData }: VehiclesProps) {
-  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
-  async function handleFormSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function addVehicle(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     const registrationNumber = String(form.get("registrationNumber")).trim().toUpperCase();
-
-    // Check duplicate only for new vehicles
-    if (!editingVehicle && data.vehicles.some((vehicle) => vehicle.registrationNumber === registrationNumber)) {
+    if (data.vehicles.some((v) => v.registrationNumber === registrationNumber)) {
       window.alert("Registration number must be unique.");
       return;
     }
-
-    const vehicleInput = {
-      id: editingVehicle ? editingVehicle.id : crypto.randomUUID(),
+    const vehicle: Vehicle = {
+      id: crypto.randomUUID(),
       registrationNumber,
       model: String(form.get("model")).trim(),
       type: String(form.get("type")) as Vehicle["type"],
@@ -35,152 +32,37 @@ export function Vehicles({ data, setData }: VehiclesProps) {
       acquisitionCost: Number(form.get("acquisitionCost")),
       status: editingVehicle ? (String(form.get("status")) as Vehicle["status"]) : undefined,
     };
-
-    try {
-      if (editingVehicle) {
-        const updated = await updateVehicleApi(editingVehicle.id, vehicleInput);
-        setData((current) => ({
-          ...current,
-          vehicles: current.vehicles.map((v) => (v.id === editingVehicle.id ? updated : v)),
-        }));
-        setEditingVehicle(null);
-      } else {
-        const savedVehicle = await createVehicle(vehicleInput);
-        setData((current) => ({ ...current, vehicles: [savedVehicle, ...current.vehicles] }));
-      }
-      formElement.reset();
-    } catch (error: any) {
-      window.alert(error.message || "Failed to save vehicle.");
-    }
+    setData((cur) => ({ ...cur, vehicles: [vehicle, ...cur.vehicles] }));
+    event.currentTarget.reset();
+    setShowModal(false);
   }
 
   return (
-    <div className="content-grid form-and-table">
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <h2>{editingVehicle ? "Edit Vehicle" : "Register Vehicle"}</h2>
-            <p>
-              {editingVehicle
-                ? `Editing ${editingVehicle.registrationNumber}`
-                : "New vehicles enter the dispatch pool as Available."}
-            </p>
-          </div>
+    <div className="page-stack">
+      {/* Header */}
+      <div className="page-header">
+        <div className="page-header-left">
+          <h2>Vehicle Registry</h2>
+          <p>Registration No. must be unique · Retired/In Shop vehicles are hidden from Trip Dispatcher</p>
         </div>
-        <form className="form-grid" key={editingVehicle?.id || "new"} onSubmit={handleFormSubmit}>
-          <label>
-            Registration Number
-            <input
-              defaultValue={editingVehicle?.registrationNumber || ""}
-              disabled={!!editingVehicle}
-              name="registrationNumber"
-              placeholder="DL-01-TA-4521"
-              required
-            />
-          </label>
-          <label>
-            Model
-            <input
-              defaultValue={editingVehicle?.model || ""}
-              name="model"
-              placeholder="Tata Ace Gold"
-              required
-            />
-          </label>
-          <label>
-            Type
-            <select defaultValue={editingVehicle?.type || "Mini Truck"} name="type">
-              <option>Mini Truck</option>
-              <option>Van</option>
-              <option>Truck</option>
-              <option>Reefer</option>
-            </select>
-          </label>
-          <label>
-            Region
-            <select defaultValue={editingVehicle?.region || "North"} name="region">
-              <option>North</option>
-              <option>South</option>
-              <option>East</option>
-              <option>West</option>
-            </select>
-          </label>
-          <label>
-            Max Load (kg)
-            <input
-              defaultValue={editingVehicle?.maxLoadKg || ""}
-              min="1"
-              name="maxLoadKg"
-              type="number"
-              required
-            />
-          </label>
-          <label>
-            Odometer (km)
-            <input
-              defaultValue={editingVehicle?.odometerKm || ""}
-              min="0"
-              name="odometerKm"
-              type="number"
-              required
-            />
-          </label>
-          <label>
-            Acquisition Cost
-            <input
-              defaultValue={editingVehicle?.acquisitionCost || ""}
-              min="1"
-              name="acquisitionCost"
-              type="number"
-              required
-            />
-          </label>
-          {editingVehicle && (
-            <label>
-              Status
-              <select defaultValue={editingVehicle.status} name="status">
-                <option>Available</option>
-                <option>On Trip</option>
-                <option>In Shop</option>
-                <option>Retired</option>
-              </select>
-            </label>
-          )}
-          <div className="form-buttons">
-            <button className="primary-button" type="submit">
-              {editingVehicle ? <Edit2 size={16} /> : <Plus size={16} />}
-              {editingVehicle ? "Save Changes" : "Add Vehicle"}
-            </button>
-            {editingVehicle && (
-              <button
-                className="secondary-button ghost-button"
-                onClick={() => setEditingVehicle(null)}
-                type="button"
-              >
-                <X size={16} />
-                Cancel
-              </button>
-            )}
-          </div>
-        </form>
-      </section>
+        <button className="primary-button" onClick={() => setShowModal(true)} type="button">
+          <Plus size={13} />
+          Add Vehicle
+        </button>
+      </div>
 
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <h2>Vehicle Registry</h2>
-            <p>Retired and in-shop vehicles are blocked from dispatch.</p>
-          </div>
-        </div>
+      {/* Table */}
+      <div className="panel table-panel">
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Registration</th>
-                <th>Model</th>
+                <th>Reg. No. (Unique)</th>
+                <th>Name / Model</th>
                 <th>Type</th>
                 <th>Capacity</th>
-                <th>Region</th>
+                <th>Odometer</th>
+                <th>Acq. Cost</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -216,7 +98,68 @@ export function Vehicles({ data, setData }: VehiclesProps) {
             </tbody>
           </table>
         </div>
-      </section>
+      </div>
+
+      {/* Add Vehicle Modal */}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <h3>Register Vehicle</h3>
+                <p>New vehicles enter the dispatch pool as Available.</p>
+              </div>
+              <button className="modal-close" onClick={() => setShowModal(false)} type="button">
+                <X size={14} />
+              </button>
+            </div>
+            <form className="form-grid" onSubmit={addVehicle}>
+              <label>
+                Registration Number
+                <input name="registrationNumber" placeholder="GJ01AB452" required />
+              </label>
+              <label>
+                Model
+                <input name="model" placeholder="VAN-05" required />
+              </label>
+              <label>
+                Type
+                <select name="type">
+                  <option>Van</option>
+                  <option>Truck</option>
+                  <option>Mini Truck</option>
+                  <option>Reefer</option>
+                </select>
+              </label>
+              <label>
+                Region
+                <select name="region">
+                  <option>North</option>
+                  <option>South</option>
+                  <option>East</option>
+                  <option>West</option>
+                </select>
+              </label>
+              <label>
+                Max Load (kg)
+                <input name="maxLoadKg" min="1" placeholder="500" type="number" required />
+              </label>
+              <label>
+                Odometer (km)
+                <input name="odometerKm" min="0" placeholder="74000" type="number" required />
+              </label>
+              <label>
+                Acquisition Cost
+                <input name="acquisitionCost" min="1" placeholder="620000" type="number" required />
+              </label>
+              <button className="primary-button" type="submit" style={{ marginTop: "4px" }}>
+                <Plus size={13} />
+                Register Vehicle
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
