@@ -1,4 +1,4 @@
-import { Check, Play, Plus, X } from "lucide-react";
+import { Check, Play, Plus, Trash2, X } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
 import { cancelTrip, completeTrip, dispatchTrip, getDriverName, getVehicleName } from "../logic/rules";
 import type { AppData, Trip } from "../types";
@@ -39,6 +39,13 @@ export function Trips({ data, setData }: TripsProps) {
       }
       return result.data;
     });
+  }
+
+  function deleteTrip(tripId: string) {
+    setData((current) => ({
+      ...current,
+      trips: current.trips.filter((item) => item.id !== tripId),
+    }));
   }
 
   return (
@@ -118,31 +125,40 @@ export function Trips({ data, setData }: TripsProps) {
               </tr>
             </thead>
             <tbody>
-              {data.trips.map((trip) => (
-                <tr key={trip.id}>
-                  <td>{trip.source} to {trip.destination}</td>
-                  <td>{getVehicleName(data, trip.vehicleId)}</td>
-                  <td>{getDriverName(data, trip.driverId)}</td>
-                  <td>{trip.cargoWeightKg} kg</td>
-                  <td><StatusBadge status={trip.status} /></td>
-                  <td>
-                    <div className="row-actions">
-                      <button className="small-button" disabled={trip.status !== "Draft"} onClick={() => handleDispatch(trip.id)} type="button">
-                        <Play size={14} />
-                        Dispatch
-                      </button>
-                      <button className="small-button" disabled={trip.status !== "Dispatched"} onClick={() => setData((current) => completeTrip(current, trip.id))} type="button">
-                        <Check size={14} />
-                        Complete
-                      </button>
-                      <button className="small-button danger" disabled={trip.status === "Completed" || trip.status === "Cancelled"} onClick={() => setData((current) => cancelTrip(current, trip.id))} type="button">
-                        <X size={14} />
-                        Cancel
-                      </button>
-                    </div>
-                  </td>
+              {data.trips.length === 0 ? (
+                <tr>
+                  <td className="empty-cell" colSpan={6}>No trips yet. Create a draft trip to get started.</td>
                 </tr>
-              ))}
+              ) : (
+                data.trips.map((trip) => (
+                  <tr key={trip.id}>
+                    <td>{trip.source} to {trip.destination}</td>
+                    <td>{getVehicleName(data, trip.vehicleId)}</td>
+                    <td>{getDriverName(data, trip.driverId)}</td>
+                    <td>{trip.cargoWeightKg} kg</td>
+                    <td><StatusBadge status={trip.status} /></td>
+                    <td>
+                      <div className="row-actions">
+                        <button className="small-button" disabled={trip.status !== "Draft"} onClick={() => handleDispatch(trip.id)} type="button">
+                          <Play size={14} />
+                          Dispatch
+                        </button>
+                        <button className="small-button" disabled={trip.status !== "Dispatched"} onClick={() => setData((current) => completeTrip(current, trip.id))} type="button">
+                          <Check size={14} />
+                          Complete
+                        </button>
+                        <button className="small-button danger" disabled={trip.status === "Completed" || trip.status === "Cancelled"} onClick={() => setData((current) => cancelTrip(current, trip.id))} type="button">
+                          <X size={14} />
+                          Cancel
+                        </button>
+                        <button className="small-button danger" disabled={trip.status !== "Draft"} onClick={() => deleteTrip(trip.id)} title="Delete draft" type="button">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

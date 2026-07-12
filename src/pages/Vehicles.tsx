@@ -108,16 +108,22 @@ export function Vehicles({ data, setData }: VehiclesProps) {
               </tr>
             </thead>
             <tbody>
-              {data.vehicles.map((vehicle) => (
-                <tr key={vehicle.id}>
-                  <td>{vehicle.registrationNumber}</td>
-                  <td>{vehicle.model}</td>
-                  <td>{vehicle.type}</td>
-                  <td>{vehicle.maxLoadKg} kg</td>
-                  <td>{vehicle.region}</td>
-                  <td><StatusBadge status={vehicle.status} /></td>
+              {data.vehicles.length === 0 ? (
+                <tr>
+                  <td className="empty-cell" colSpan={6}>No vehicles registered yet. Add your first vehicle using the form.</td>
                 </tr>
-              ))}
+              ) : (
+                data.vehicles.map((vehicle) => (
+                  <tr key={vehicle.id}>
+                    <td>{vehicle.registrationNumber}</td>
+                    <td>{vehicle.model}</td>
+                    <td>{vehicle.type}</td>
+                    <td>{vehicle.maxLoadKg} kg</td>
+                    <td>{vehicle.region}</td>
+                    <td><StatusBadge status={vehicle.status} /></td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
