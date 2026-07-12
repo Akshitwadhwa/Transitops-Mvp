@@ -1,8 +1,8 @@
-import { Plus } from "lucide-react";
+import { useState } from "react";
+import { Edit2, Plus, X } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
 import type { AppData, Vehicle } from "../types";
-
-import { createVehicle } from "../logic/api";
+import { createVehicle, updateVehicleApi } from "../logic/api";
 
 type VehiclesProps = {
   data: AppData;
@@ -10,18 +10,22 @@ type VehiclesProps = {
 };
 
 export function Vehicles({ data, setData }: VehiclesProps) {
-  async function addVehicle(event: React.FormEvent<HTMLFormElement>) {
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+
+  async function handleFormSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     const registrationNumber = String(form.get("registrationNumber")).trim().toUpperCase();
-    if (data.vehicles.some((vehicle) => vehicle.registrationNumber === registrationNumber)) {
+
+    // Check duplicate only for new vehicles
+    if (!editingVehicle && data.vehicles.some((vehicle) => vehicle.registrationNumber === registrationNumber)) {
       window.alert("Registration number must be unique.");
       return;
     }
 
     const vehicleInput = {
-      id: crypto.randomUUID(),
+      id: editingVehicle ? editingVehicle.id : crypto.randomUUID(),
       registrationNumber,
       model: String(form.get("model")).trim(),
       type: String(form.get("type")) as Vehicle["type"],
@@ -29,14 +33,24 @@ export function Vehicles({ data, setData }: VehiclesProps) {
       maxLoadKg: Number(form.get("maxLoadKg")),
       odometerKm: Number(form.get("odometerKm")),
       acquisitionCost: Number(form.get("acquisitionCost")),
+      status: editingVehicle ? (String(form.get("status")) as Vehicle["status"]) : undefined,
     };
 
     try {
-      const savedVehicle = await createVehicle(vehicleInput);
-      setData((current) => ({ ...current, vehicles: [savedVehicle, ...current.vehicles] }));
+      if (editingVehicle) {
+        const updated = await updateVehicleApi(editingVehicle.id, vehicleInput);
+        setData((current) => ({
+          ...current,
+          vehicles: current.vehicles.map((v) => (v.id === editingVehicle.id ? updated : v)),
+        }));
+        setEditingVehicle(null);
+      } else {
+        const savedVehicle = await createVehicle(vehicleInput);
+        setData((current) => ({ ...current, vehicles: [savedVehicle, ...current.vehicles] }));
+      }
       formElement.reset();
     } catch (error: any) {
-      window.alert(error.message || "Failed to create vehicle.");
+      window.alert(error.message || "Failed to save vehicle.");
     }
   }
 
@@ -45,22 +59,37 @@ export function Vehicles({ data, setData }: VehiclesProps) {
       <section className="panel">
         <div className="panel-heading">
           <div>
-            <h2>Register Vehicle</h2>
-            <p>New vehicles enter the dispatch pool as Available.</p>
+            <h2>{editingVehicle ? "Edit Vehicle" : "Register Vehicle"}</h2>
+            <p>
+              {editingVehicle
+                ? `Editing ${editingVehicle.registrationNumber}`
+                : "New vehicles enter the dispatch pool as Available."}
+            </p>
           </div>
         </div>
-        <form className="form-grid" onSubmit={addVehicle}>
+        <form className="form-grid" key={editingVehicle?.id || "new"} onSubmit={handleFormSubmit}>
           <label>
             Registration Number
-            <input name="registrationNumber" placeholder="DL-01-TA-4521" required />
+            <input
+              defaultValue={editingVehicle?.registrationNumber || ""}
+              disabled={!!editingVehicle}
+              name="registrationNumber"
+              placeholder="DL-01-TA-4521"
+              required
+            />
           </label>
           <label>
             Model
-            <input name="model" placeholder="Tata Ace Gold" required />
+            <input
+              defaultValue={editingVehicle?.model || ""}
+              name="model"
+              placeholder="Tata Ace Gold"
+              required
+            />
           </label>
           <label>
             Type
-            <select name="type">
+            <select defaultValue={editingVehicle?.type || "Mini Truck"} name="type">
               <option>Mini Truck</option>
               <option>Van</option>
               <option>Truck</option>
@@ -69,7 +98,7 @@ export function Vehicles({ data, setData }: VehiclesProps) {
           </label>
           <label>
             Region
-            <select name="region">
+            <select defaultValue={editingVehicle?.region || "North"} name="region">
               <option>North</option>
               <option>South</option>
               <option>East</option>
@@ -78,20 +107,61 @@ export function Vehicles({ data, setData }: VehiclesProps) {
           </label>
           <label>
             Max Load (kg)
-            <input name="maxLoadKg" min="1" type="number" required />
+            <input
+              defaultValue={editingVehicle?.maxLoadKg || ""}
+              min="1"
+              name="maxLoadKg"
+              type="number"
+              required
+            />
           </label>
           <label>
             Odometer (km)
-            <input name="odometerKm" min="0" type="number" required />
+            <input
+              defaultValue={editingVehicle?.odometerKm || ""}
+              min="0"
+              name="odometerKm"
+              type="number"
+              required
+            />
           </label>
           <label>
             Acquisition Cost
-            <input name="acquisitionCost" min="1" type="number" required />
+            <input
+              defaultValue={editingVehicle?.acquisitionCost || ""}
+              min="1"
+              name="acquisitionCost"
+              type="number"
+              required
+            />
           </label>
-          <button className="primary-button" type="submit">
-            <Plus size={16} />
-            Add Vehicle
-          </button>
+          {editingVehicle && (
+            <label>
+              Status
+              <select defaultValue={editingVehicle.status} name="status">
+                <option>Available</option>
+                <option>On Trip</option>
+                <option>In Shop</option>
+                <option>Retired</option>
+              </select>
+            </label>
+          )}
+          <div className="form-buttons">
+            <button className="primary-button" type="submit">
+              {editingVehicle ? <Edit2 size={16} /> : <Plus size={16} />}
+              {editingVehicle ? "Save Changes" : "Add Vehicle"}
+            </button>
+            {editingVehicle && (
+              <button
+                className="secondary-button ghost-button"
+                onClick={() => setEditingVehicle(null)}
+                type="button"
+              >
+                <X size={16} />
+                Cancel
+              </button>
+            )}
+          </div>
         </form>
       </section>
 
@@ -112,12 +182,13 @@ export function Vehicles({ data, setData }: VehiclesProps) {
                 <th>Capacity</th>
                 <th>Region</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {data.vehicles.length === 0 ? (
                 <tr>
-                  <td className="empty-cell" colSpan={6}>No vehicles registered yet. Add your first vehicle using the form.</td>
+                  <td className="empty-cell" colSpan={7}>No vehicles registered yet. Add your first vehicle using the form.</td>
                 </tr>
               ) : (
                 data.vehicles.map((vehicle) => (
@@ -128,6 +199,17 @@ export function Vehicles({ data, setData }: VehiclesProps) {
                     <td>{vehicle.maxLoadKg} kg</td>
                     <td>{vehicle.region}</td>
                     <td><StatusBadge status={vehicle.status} /></td>
+                    <td>
+                      <button
+                        className="small-button"
+                        onClick={() => setEditingVehicle(vehicle)}
+                        title="Edit vehicle"
+                        type="button"
+                      >
+                        <Edit2 size={14} />
+                        Edit
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
