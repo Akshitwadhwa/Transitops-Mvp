@@ -17,105 +17,105 @@ type DashboardProps = {
   data: AppData;
 };
 
+type AlertItem = {
+  id: string;
+  icon: typeof AlertTriangle;
+  title: string;
+  detail: string;
+  severity: "critical" | "warning";
+};
+
 export function Dashboard({ data }: DashboardProps) {
-  const activeVehicles = data.vehicles.filter((v) => v.status !== "Retired").length;
+  // ── Computed values ─────────────────────────────────────────
+  const activeVehicles   = data.vehicles.filter((v) => v.status !== "Retired").length;
   const availableVehicles = data.vehicles.filter((v) => v.status === "Available").length;
-  const inShop = data.vehicles.filter((v) => v.status === "In Shop").length;
-  const activeTrips = data.trips.filter((t) => t.status === "Dispatched").length;
+  const inShop           = data.vehicles.filter((v) => v.status === "In Shop").length;
+  const activeTrips      = data.trips.filter((t) => t.status === "Dispatched").length;
   const availableDrivers = data.drivers.filter((d) => d.status === "Available").length;
-  const utilization = activeVehicles ? Math.round((activeTrips / activeVehicles) * 100) : 0;
-  const totalCost = data.expenses.reduce((sum, e) => sum + e.amount, 0);
+  const utilization      = activeVehicles ? Math.round((activeTrips / activeVehicles) * 100) : 0;
+  const totalCost        = data.expenses.reduce((sum, e) => sum + e.amount, 0);
+  const liveTrips        = data.trips.filter((t) => t.status === "Dispatched");
 
-  const liveTrips = data.trips.filter((t) => t.status === "Dispatched");
-
-  // Risk alert items — tagged with severity
-  type AlertItem = {
-    id: string;
-    icon: typeof AlertTriangle;
-    title: string;
-    detail: string;
-    severity: "critical" | "warning";
-  };
-
+  // ── Risk alerts — severity-tagged ───────────────────────────
   const alertItems: AlertItem[] = [
-    // Expired licenses → critical
+    // Critical: expired licenses
     ...data.drivers
       .filter((d) => isLicenseExpired(d))
       .map((d) => ({
         id: `lic-${d.id}`,
         icon: ShieldAlert,
         title: d.name,
-        detail: `License expired (${d.licenseExpiryDate})`,
+        detail: `License expired ${d.licenseExpiryDate}`,
         severity: "critical" as const,
       })),
-    // Low safety score → warning
+    // Warning: low safety score (non-expired only)
     ...data.drivers
       .filter((d) => !isLicenseExpired(d) && d.safetyScore < 70)
       .map((d) => ({
-        id: `safety-${d.id}`,
+        id: `score-${d.id}`,
         icon: AlertTriangle,
         title: d.name,
         detail: `Safety score ${d.safetyScore}/100 — below threshold`,
         severity: "warning" as const,
       })),
-    // Active maintenance → warning
+    // Warning: active maintenance
     ...data.maintenanceLogs
-      .filter((item) => item.status === "Active")
-      .map((item) => ({
-        id: `maint-${item.id}`,
+      .filter((log) => log.status === "Active")
+      .map((log) => ({
+        id: `maint-${log.id}`,
         icon: Wrench,
-        title: getVehicleName(data, item.vehicleId),
-        detail: item.title,
+        title: getVehicleName(data, log.vehicleId),
+        detail: log.title,
         severity: "warning" as const,
       })),
-  ];
+  ].sort((a, b) => (a.severity === "critical" ? -1 : b.severity === "critical" ? 1 : 0));
 
   const criticalCount = alertItems.filter((a) => a.severity === "critical").length;
-  const totalAlerts = alertItems.length;
+  const totalAlerts   = alertItems.length;
 
   return (
     <div className="page-stack">
-      {/* ── KPI Strip ─────────────────────────────────────────── */}
+      {/* ── KPI strip ───────────────────────────────────────── */}
       <section className="kpi-grid">
         <KpiCard
-          label="Active Vehicles"
-          value={activeVehicles}
+          accent="info"
           detail={`${availableVehicles} available`}
           icon={Truck}
-          accent="info"
+          label="Active Vehicles"
+          value={activeVehicles}
         />
         <KpiCard
-          label="Vehicles In Shop"
-          value={inShop}
+          accent={inShop > 0 ? "warning" : "neutral"}
           detail="Blocked from dispatch"
           icon={Wrench}
-          accent={inShop > 0 ? "warning" : "neutral"}
+          label="In Shop"
+          value={inShop}
         />
         <KpiCard
-          label="Live Trips"
-          value={activeTrips}
+          accent="info"
           detail={`${utilization}% fleet utilization`}
           icon={Route}
-          accent="info"
+          label="Live Trips"
+          value={activeTrips}
         />
         <KpiCard
-          label="Drivers Ready"
-          value={availableDrivers}
+          accent="positive"
           detail="Valid, available pool"
           icon={UserCheck}
-          accent="positive"
+          label="Drivers Ready"
+          value={availableDrivers}
         />
         <KpiCard
-          label="Operating Cost"
-          value={formatMoney(totalCost)}
+          accent="neutral"
           detail="Fuel, tolls, maintenance"
           icon={CircleDollarSign}
-          accent="neutral"
+          label="Operating Cost"
+          value={formatMoney(totalCost)}
         />
       </section>
 
-      {/* ── Live Trips + Risk Alerts ───────────────────────────── */}
-      <section className="content-grid two">
+      {/* ── Live trips + Risk alerts ─────────────────────────── */}
+      <div className="content-grid two">
         {/* Live Trips */}
         <div className="panel">
           <div className="panel-heading">
@@ -127,7 +127,7 @@ export function Dashboard({ data }: DashboardProps) {
 
           {liveTrips.length === 0 ? (
             <div className="empty-state">
-              <CheckCircle size={28} className="empty-state-icon" />
+              <CheckCircle size={26} className="empty-state-icon" />
               <p>No active trips right now</p>
               <small>Dispatch a trip from the Trips page to see it here.</small>
             </div>
@@ -145,14 +145,10 @@ export function Dashboard({ data }: DashboardProps) {
                 <tbody>
                   {liveTrips.map((trip) => (
                     <tr key={trip.id}>
-                      <td>
-                        {trip.source} → {trip.destination}
-                      </td>
+                      <td>{trip.source} → {trip.destination}</td>
                       <td>{getVehicleName(data, trip.vehicleId)}</td>
                       <td>{getDriverName(data, trip.driverId)}</td>
-                      <td>
-                        <StatusBadge status={trip.status} />
-                      </td>
+                      <td><StatusBadge status={trip.status} /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -177,20 +173,22 @@ export function Dashboard({ data }: DashboardProps) {
 
           {alertItems.length === 0 ? (
             <div className="empty-state">
-              <CheckCircle size={28} className="empty-state-icon" style={{ color: "var(--clr-positive-dot)" }} />
+              <CheckCircle
+                size={26}
+                className="empty-state-icon"
+                style={{ color: "var(--accent)", opacity: 1 }}
+              />
               <p>Fleet is clear</p>
               <small>No license, safety, or maintenance issues detected.</small>
             </div>
           ) : (
-            <div className="alert-list">
-              {/* Critical alerts first */}
-              {alertItems
-                .sort((a, b) => (a.severity === "critical" ? -1 : b.severity === "critical" ? 1 : 0))
-                .map((item) => {
+            <>
+              <div className="alert-list">
+                {alertItems.map((item) => {
                   const Icon = item.icon;
                   return (
                     <div className={`alert-item ${item.severity}`} key={item.id}>
-                      <Icon size={16} className="alert-icon" />
+                      <Icon size={15} className="alert-icon" strokeWidth={2} />
                       <div>
                         <strong>{item.title}</strong>
                         <span>{item.detail}</span>
@@ -198,16 +196,22 @@ export function Dashboard({ data }: DashboardProps) {
                     </div>
                   );
                 })}
-            </div>
-          )}
+              </div>
 
-          {criticalCount > 0 && (
-            <p style={{ fontSize: "0.75rem", color: "var(--clr-negative-text)", marginTop: "12px", marginBottom: 0 }}>
-              {criticalCount} critical issue{criticalCount !== 1 ? "s" : ""} — action required before dispatch.
-            </p>
+              {criticalCount > 0 && (
+                <p style={{
+                  color: "var(--badge-red-txt)",
+                  fontSize: "0.72rem",
+                  marginBottom: 0,
+                  marginTop: "12px",
+                }}>
+                  {criticalCount} critical issue{criticalCount !== 1 ? "s" : ""} — action required before dispatch.
+                </p>
+              )}
+            </>
           )}
         </div>
-      </section>
+      </div>
     </div>
   );
 }

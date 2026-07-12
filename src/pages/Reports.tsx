@@ -6,7 +6,6 @@ type ReportsProps = {
   data: AppData;
 };
 
-// Status tile metadata: CSS accent class + display label
 const UTILIZATION_TILES = [
   { status: "Available", accent: "positive" },
   { status: "On Trip",   accent: "active"   },
@@ -14,16 +13,25 @@ const UTILIZATION_TILES = [
   { status: "Retired",   accent: "negative" },
 ] as const;
 
-export function Reports({ data }: ReportsProps) {
-  const completedRevenue = data.trips
-    .filter((trip) => trip.status === "Completed" || trip.status === "Dispatched")
-    .reduce((sum, trip) => sum + trip.revenue, 0);
-  const totalCost = data.expenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const roi = totalCost ? Math.round(((completedRevenue - totalCost) / totalCost) * 100) : 0;
+function vehicleCost(data: AppData, vehicleId: string): number {
+  return data.expenses
+    .filter((e) => e.vehicleId === vehicleId)
+    .reduce((sum, e) => sum + e.amount, 0);
+}
 
-  // Sort vehicles by cost descending for the bar chart
+export function Reports({ data }: ReportsProps) {
+  // ── Summary metrics ──────────────────────────────────────────
+  const completedRevenue = data.trips
+    .filter((t) => t.status === "Completed" || t.status === "Dispatched")
+    .reduce((sum, t) => sum + t.revenue, 0);
+  const totalCost = data.expenses.reduce((sum, e) => sum + e.amount, 0);
+  const roi = totalCost
+    ? Math.round(((completedRevenue - totalCost) / totalCost) * 100)
+    : 0;
+
+  // ── Vehicle costs — sorted descending ───────────────────────
   const vehicleCosts = data.vehicles
-    .map((vehicle) => ({ vehicle, cost: vehicleCost(data, vehicle.id) }))
+    .map((v) => ({ vehicle: v, cost: vehicleCost(data, v.id) }))
     .sort((a, b) => b.cost - a.cost);
 
   const maxCost = Math.max(...vehicleCosts.map((vc) => vc.cost), 1);
@@ -31,63 +39,59 @@ export function Reports({ data }: ReportsProps) {
 
   return (
     <div className="page-stack">
-      {/* ── Summary Metrics ──────────────────────────────────── */}
-      <section className="content-grid three">
-        {/* Revenue */}
+      {/* ── Summary metrics ─────────────────────────────────── */}
+      <div className="content-grid three">
         <div className="metric-panel">
           <span className="metric-panel-label">Revenue Tracked</span>
           <strong className="metric-panel-value">{formatMoney(completedRevenue)}</strong>
-          <span className="metric-panel-context">From completed &amp; active trips</span>
-          {/* Chart drop-in zone — replace <div> content with <AreaChart /> later */}
+          <span className="metric-panel-context">Completed &amp; active trips</span>
+          {/* Chart drop-zone — replace with <AreaChart> from Recharts */}
           <div className="chart-placeholder" data-chart="revenue-trend">
-            <TrendingUp size={14} />
-            Chart available after Recharts integration
+            <TrendingUp size={13} />
+            Chart area — Recharts ready
           </div>
         </div>
 
-        {/* Cost */}
         <div className="metric-panel">
           <span className="metric-panel-label">Operational Cost</span>
           <strong className="metric-panel-value">{formatMoney(totalCost)}</strong>
-          <span className="metric-panel-context">Fuel, toll &amp; maintenance spend</span>
+          <span className="metric-panel-context">Fuel, toll &amp; maintenance</span>
           <div className="chart-placeholder" data-chart="cost-trend">
-            <TrendingUp size={14} />
-            Chart available after Recharts integration
+            <TrendingUp size={13} />
+            Chart area — Recharts ready
           </div>
         </div>
 
-        {/* ROI */}
         <div className="metric-panel">
           <span className="metric-panel-label">Simple ROI</span>
           <strong
             className="metric-panel-value"
-            style={{ color: roi >= 0 ? "var(--clr-positive-text)" : "var(--clr-negative-text)" }}
+            style={{ color: roi >= 0 ? "var(--accent)" : "var(--badge-red-txt)" }}
           >
-            {roi >= 0 ? "+" : ""}
-            {roi}%
+            {roi >= 0 ? "+" : ""}{roi}%
           </strong>
           <span className="metric-panel-context">(Revenue − Cost) ÷ Cost</span>
           <div className="chart-placeholder" data-chart="roi-trend">
-            <TrendingUp size={14} />
-            Chart available after Recharts integration
+            <TrendingUp size={13} />
+            Chart area — Recharts ready
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* ── Vehicle Cost Breakdown ───────────────────────────── */}
-      <section className="panel">
+      {/* ── Vehicle cost breakdown ───────────────────────────── */}
+      <div className="panel">
         <div className="panel-heading">
           <div>
             <h2>Vehicle Cost Breakdown</h2>
-            <p>Fuel, toll, and maintenance spend grouped by vehicle — sorted high to low.</p>
+            <p>Fuel, toll, and maintenance spend per vehicle — sorted highest first.</p>
           </div>
         </div>
 
         {!hasExpenses ? (
           <div className="empty-state">
-            <BarChart2 size={28} className="empty-state-icon" />
+            <BarChart2 size={26} className="empty-state-icon" />
             <p>No expense data yet</p>
-            <small>Log expenses from the Expenses page to see vehicle cost breakdown here.</small>
+            <small>Log expenses from the Expenses page to populate this chart.</small>
           </div>
         ) : (
           <div className="bar-list">
@@ -95,30 +99,30 @@ export function Reports({ data }: ReportsProps) {
             <div className="bar-list-header" aria-hidden="true">
               <span>Vehicle</span>
               <span className="bar-track-header">Cost share</span>
-              <span style={{ textAlign: "right" }}>Total</span>
+              <span>Total</span>
             </div>
 
-            {vehicleCosts.map(({ vehicle, cost }) => {
-              const pct = Math.max((cost / maxCost) * 100, 2);
-              return (
-                <div className="bar-row" key={vehicle.id}>
-                  <div className="bar-row-label">
-                    <strong>{vehicle.registrationNumber}</strong>
-                    <span>{vehicle.model}</span>
-                  </div>
-                  <div className="bar-track" title={`${Math.round(pct)}% of max`}>
-                    <div className="bar-fill" style={{ width: `${pct}%` }} />
-                  </div>
-                  <span className="bar-cost">{formatMoney(cost)}</span>
+            {vehicleCosts.map(({ vehicle, cost }) => (
+              <div className="bar-row" key={vehicle.id}>
+                <div className="bar-row-label">
+                  <strong>{vehicle.registrationNumber}</strong>
+                  <span>{vehicle.model}</span>
                 </div>
-              );
-            })}
+                <div className="bar-track" title={`${Math.round((cost / maxCost) * 100)}% of fleet max`}>
+                  <div
+                    className="bar-fill"
+                    style={{ width: `${Math.max((cost / maxCost) * 100, 2)}%` }}
+                  />
+                </div>
+                <span className="bar-cost">{formatMoney(cost)}</span>
+              </div>
+            ))}
           </div>
         )}
-      </section>
+      </div>
 
-      {/* ── Fleet Utilization Snapshot ───────────────────────── */}
-      <section className="panel">
+      {/* ── Fleet utilization snapshot ───────────────────────── */}
+      <div className="panel">
         <div className="panel-heading">
           <div>
             <h2>Fleet Utilization Snapshot</h2>
@@ -128,30 +132,21 @@ export function Reports({ data }: ReportsProps) {
 
         {data.vehicles.length === 0 ? (
           <div className="empty-state">
-            <BarChart2 size={28} className="empty-state-icon" />
+            <BarChart2 size={26} className="empty-state-icon" />
             <p>No vehicles registered</p>
-            <small>Add vehicles from the Vehicles page to see utilization data.</small>
+            <small>Add vehicles to see utilization data.</small>
           </div>
         ) : (
           <div className="status-grid">
-            {UTILIZATION_TILES.map(({ status, accent }) => {
-              const count = data.vehicles.filter((v) => v.status === status).length;
-              return (
-                <div className={`status-tile ${accent}`} key={status}>
-                  <span>{status}</span>
-                  <strong>{count}</strong>
-                </div>
-              );
-            })}
+            {UTILIZATION_TILES.map(({ status, accent }) => (
+              <div className={`status-tile ${accent}`} key={status}>
+                <span>{status}</span>
+                <strong>{data.vehicles.filter((v) => v.status === status).length}</strong>
+              </div>
+            ))}
           </div>
         )}
-      </section>
+      </div>
     </div>
   );
-}
-
-function vehicleCost(data: AppData, vehicleId: string) {
-  return data.expenses
-    .filter((expense) => expense.vehicleId === vehicleId)
-    .reduce((sum, expense) => sum + expense.amount, 0);
 }

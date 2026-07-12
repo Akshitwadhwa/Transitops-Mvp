@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   BarChart3,
   CarFront,
@@ -7,7 +7,10 @@ import {
   Gauge,
   LogOut,
   Menu,
+  Moon,
+  RotateCcw,
   ShieldCheck,
+  Sun,
   Truck,
   UserRound,
   Wrench,
@@ -20,99 +23,151 @@ type LayoutProps = {
   currentUser: User;
   onPageChange: (page: Page) => void;
   onLogout: () => void;
+  onReset: () => void;
   children: React.ReactNode;
 };
 
-const navItems: { page: Page; label: string; icon: typeof Gauge }[] = [
-  { page: "dashboard", label: "Dashboard", icon: Gauge },
-  { page: "vehicles", label: "Vehicles", icon: Truck },
-  { page: "drivers", label: "Drivers", icon: UserRound },
-  { page: "trips", label: "Trips", icon: ClipboardList },
-  { page: "maintenance", label: "Maintenance", icon: Wrench },
-  { page: "expenses", label: "Expenses", icon: Fuel },
-  { page: "reports", label: "Reports", icon: BarChart3 },
+const NAV_ITEMS: { page: Page; label: string; icon: typeof Gauge }[] = [
+  { page: "dashboard",   label: "Dashboard",   icon: Gauge       },
+  { page: "vehicles",    label: "Vehicles",     icon: Truck       },
+  { page: "drivers",     label: "Drivers",      icon: UserRound   },
+  { page: "trips",       label: "Trips",        icon: ClipboardList },
+  { page: "maintenance", label: "Maintenance",  icon: Wrench      },
+  { page: "expenses",    label: "Expenses",     icon: Fuel        },
+  { page: "reports",     label: "Reports",      icon: BarChart3   },
 ];
 
-export function Layout({ activePage, currentUser, onPageChange, onLogout, children }: LayoutProps) {
+export function Layout({ activePage, currentUser, onPageChange, onLogout, onReset, children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Dark mode — persisted to localStorage
+  const [dark, setDark] = useState<boolean>(() => {
+    try { return localStorage.getItem("transitops-theme") === "dark"; }
+    catch { return false; }
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    try { localStorage.setItem("transitops-theme", dark ? "dark" : "light"); }
+    catch { /* ignore */ }
+  }, [dark]);
 
   function handleNavClick(page: Page) {
     onPageChange(page);
-    setSidebarOpen(false); // close drawer on mobile after navigation
+    setSidebarOpen(false);
   }
+
+  const pageLabel = NAV_ITEMS.find((i) => i.page === activePage)?.label ?? "";
 
   return (
     <div className="app-shell">
-      {/* Mobile overlay — tapping it closes the sidebar */}
+      {/* Mobile overlay */}
       <div
+        aria-hidden="true"
         className={sidebarOpen ? "sidebar-overlay overlay--visible" : "sidebar-overlay"}
         onClick={() => setSidebarOpen(false)}
-        aria-hidden="true"
       />
 
+      {/* Sidebar */}
       <aside className={sidebarOpen ? "sidebar sidebar--open" : "sidebar"}>
-        <div className="brand">
+        {/* Brand */}
+        <div className="sidebar-brand">
           <div className="brand-mark">
-            <CarFront size={20} />
+            <CarFront size={17} strokeWidth={1.75} />
           </div>
-          <div>
+          <div className="brand-name">
             <strong>TransitOps</strong>
             <span>Command Center</span>
           </div>
         </div>
 
-        <nav className="nav-list" aria-label="Primary">
-          {navItems.map(({ page, label, icon: Icon }) => (
+        {/* Nav */}
+        <nav className="nav-list" aria-label="Primary navigation">
+          {NAV_ITEMS.map(({ page, label, icon: Icon }) => (
             <button
+              aria-current={activePage === page ? "page" : undefined}
               className={activePage === page ? "nav-item active" : "nav-item"}
               key={page}
               onClick={() => handleNavClick(page)}
               type="button"
-              aria-current={activePage === page ? "page" : undefined}
             >
-              <Icon size={17} className="nav-icon" />
-              <span>{label}</span>
+              <Icon size={16} strokeWidth={1.75} className="nav-icon" />
+              {label}
             </button>
           ))}
         </nav>
 
-        <div className="role-card">
-          <ShieldCheck size={16} color="var(--clr-brand)" />
-          <div>
-            <strong>{currentUser.name}</strong>
-            <span>{currentUser.role}</span>
+        {/* User + role */}
+        <div className="sidebar-footer">
+          <div className="role-card">
+            <div className="role-card-avatar">
+              <ShieldCheck size={14} strokeWidth={2} />
+            </div>
+            <div className="role-card-info">
+              <strong>{currentUser.name}</strong>
+              <span>{currentUser.role}</span>
+            </div>
           </div>
         </div>
       </aside>
 
-      <main className="workspace">
+      {/* Main workspace */}
+      <div className="workspace">
+        {/* Topbar */}
         <header className="topbar">
-          {/* Hamburger — visible only on tablet/mobile via CSS */}
-          <button
-            className="hamburger-btn"
-            type="button"
-            aria-label={sidebarOpen ? "Close menu" : "Open menu"}
-            aria-expanded={sidebarOpen}
-            onClick={() => setSidebarOpen((prev) => !prev)}
-          >
-            {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
-          </button>
-
           <div className="topbar-left">
-            <span className="eyebrow">Smart Transport Operations Platform</span>
-            <h1>{navItems.find((item) => item.page === activePage)?.label}</h1>
+            {/* Hamburger — visible on tablet/mobile via CSS */}
+            <button
+              aria-expanded={sidebarOpen}
+              aria-label={sidebarOpen ? "Close menu" : "Open menu"}
+              className="hamburger-btn"
+              onClick={() => setSidebarOpen((p) => !p)}
+              type="button"
+            >
+              {sidebarOpen ? <X size={16} /> : <Menu size={16} />}
+            </button>
+
+            <span className="topbar-eyebrow">Fleet Operations</span>
+            <span className="topbar-divider" aria-hidden="true">/</span>
+            <h1>{pageLabel}</h1>
           </div>
 
           <div className="topbar-actions">
-            <button className="ghost-button" onClick={onLogout} type="button">
-              <LogOut size={15} />
-              <span>Logout</span>
+            <button
+              className="ghost-button"
+              onClick={onReset}
+              title="Reset all demo data"
+              type="button"
+            >
+              <RotateCcw size={13} />
+              <span className="btn-label">Reset Data</span>
+            </button>
+
+            <button
+              aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+              className="theme-toggle"
+              onClick={() => setDark((d) => !d)}
+              type="button"
+            >
+              {dark ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
+
+            <button
+              className="ghost-button"
+              onClick={onLogout}
+              type="button"
+            >
+              <LogOut size={13} />
+              <span className="btn-label">Logout</span>
             </button>
           </div>
         </header>
 
-        {children}
-      </main>
+        {/* Page content */}
+        <div className="page-content">
+          {children}
+        </div>
+      </div>
     </div>
   );
 }

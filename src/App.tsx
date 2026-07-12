@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { RotateCcw, ShieldCheck, Truck } from "lucide-react";
+import { ShieldCheck, Truck } from "lucide-react";
 import { Layout } from "./components/Layout";
 import { users } from "./data/seed";
 import { loadData, resetData, saveData } from "./logic/storage";
@@ -44,9 +44,9 @@ export default function App() {
     return (
       <main className="login-screen">
         <section className="login-panel">
-          <div className="brand large">
+          <div className="login-brand">
             <div className="brand-mark">
-              <Truck size={28} />
+              <Truck size={20} strokeWidth={1.75} />
             </div>
             <div>
               <strong>TransitOps</strong>
@@ -54,18 +54,16 @@ export default function App() {
             </div>
           </div>
 
-          <div>
-            <h1>Choose a demo role</h1>
-            <p>
-              The MVP uses seeded users so the hackathon demo can start immediately. Role-based access can
-              be tightened in the next layer.
-            </p>
-          </div>
+          <h1>Choose a demo role</h1>
+          <p>
+            The MVP uses seeded users so the demo can start immediately.
+            Role-based access can be tightened in the next layer.
+          </p>
 
           <div className="login-grid">
             {users.map((user) => (
               <button className="login-card" key={user.id} onClick={() => setCurrentUser(user)} type="button">
-                <ShieldCheck size={18} />
+                <ShieldCheck size={16} color="var(--accent)" strokeWidth={2} />
                 <strong>{user.name}</strong>
                 <span>{user.role}</span>
                 <small>{user.email}</small>
@@ -83,13 +81,8 @@ export default function App() {
       currentUser={currentUser}
       onLogout={() => setCurrentUser(null)}
       onPageChange={setActivePage}
+      onReset={() => setData(resetData())}
     >
-      <div className="workspace-actions">
-        <button className="ghost-button" onClick={() => setData(resetData())} type="button">
-          <RotateCcw size={16} />
-          Reset Demo Data
-        </button>
-      </div>
       {page}
     </Layout>
   );
